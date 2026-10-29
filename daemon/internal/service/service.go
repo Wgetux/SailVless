@@ -37,6 +37,10 @@ type Service struct {
 	// OnState is called on every connection state change.
 	OnState func(Status)
 
+	// opMu serializes Connect/Disconnect/Shutdown: concurrent callers (UI,
+	// settings change, network change, helper loss) would remove each other's configs
+	opMu sync.Mutex
+
 	mu        sync.Mutex
 	activeID  string
 	activeCfg store.Settings
@@ -158,6 +162,8 @@ func (s *Service) DeleteProfile(id string) error {
 
 // Connect starts the core for profile id ("" = selected profile).
 func (s *Service) Connect(id string) error {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	set := s.Store.Settings()
 	if id == "" {
 		id = set.SelectedID
@@ -302,6 +308,8 @@ func (s *Service) Disconnect() {
 
 // Shutdown stops the core but keeps the user's intent (daemon exit, upgrade).
 func (s *Service) Shutdown() {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	s.Runner.Stop()
 	s.stopTun()
 	s.mu.Lock()

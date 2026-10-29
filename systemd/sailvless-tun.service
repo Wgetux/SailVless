@@ -11,8 +11,9 @@ ExecStopPost=/usr/libexec/sailvless/sailvless-tun-helper --cleanup
 Restart=no
 
 # needs: routes/rules/iptables/TUN (NET_ADMIN, NET_RAW), starting the core as the
-# calling user (SETUID/SETGID) and handing it CAP_NET_ADMIN for SO_MARK (SETPCAP)
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SETUID CAP_SETGID CAP_SETPCAP CAP_CHOWN
+# calling user (SETUID/SETGID) and handing it CAP_NET_ADMIN for SO_MARK (SETPCAP),
+# and stopping that user-owned process again (KILL: root cannot signal other uids without it)
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SETUID CAP_SETGID CAP_SETPCAP CAP_CHOWN CAP_KILL
 # /dev/net/tun is root:vpn 0660 and the unit has no CAP_DAC_OVERRIDE
 SupplementaryGroups=vpn
 NoNewPrivileges=yes

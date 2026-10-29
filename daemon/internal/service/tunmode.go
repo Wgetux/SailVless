@@ -177,6 +177,16 @@ func (s *Service) stopTun() {
 	}
 }
 
+func (s *Service) restartTunCore() error {
+	s.mu.Lock()
+	c := s.tunConn
+	s.mu.Unlock()
+	if c == nil {
+		return errors.New("no helper connection")
+	}
+	return c.Object(tun.BusName, tun.Path).Call(tun.Interface+".RestartCore", 0).Err
+}
+
 // helperLogs returns the helper's log (core + tunnel) while TUN mode is used.
 func (s *Service) helperLogs(n int) string {
 	s.mu.Lock()

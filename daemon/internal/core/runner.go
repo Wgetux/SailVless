@@ -161,12 +161,21 @@ func (r *Runner) runOnce(ctx context.Context, spec Spec) error {
 		case err := <-done:
 			return err
 		case <-ctx.Done():
-			_ = cmd.Process.Signal(syscall.SIGTERM)
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				r.Logs.Add("sailvlessd: ", fmt.Sprintf("%s: SIGTERM failed: %v", spec.Name, err))
+			}
 			select {
 			case <-done:
 			case <-time.After(3 * time.Second):
-				_ = cmd.Process.Kill()
-				<-done
+				if err := cmd.Process.Kill(); err != nil {
+					r.Logs.Add("sailvlessd: ", fmt.Sprintf("%s: SIGKILL failed: %v", spec.Name, err))
+				}
+				// never block the caller forever on a process we cannot reap
+				select {
+				case <-done:
+				case <-time.After(5 * time.Second):
+					r.Logs.Add("sailvlessd: ", fmt.Sprintf("%s (pid %d) did not exit", spec.Name, cmd.Process.Pid))
+				}
 			}
 			return ctx.Err()
 		case <-ready.C:

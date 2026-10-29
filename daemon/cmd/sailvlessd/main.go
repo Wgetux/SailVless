@@ -15,7 +15,7 @@ import (
 	"sailvless/internal/store"
 )
 
-var version = "0.5.1"
+var version = "0.5.4"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ctl" {
@@ -68,6 +68,7 @@ func run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go svc.AutoUpdateLoop(ctx)
+	go svc.WatchNetwork(ctx)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)

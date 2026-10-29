@@ -40,6 +40,7 @@ type helper struct {
 
 	mu       sync.Mutex
 	core     *core.Runner
+	coreSpec core.Spec
 	tunR     *core.Runner
 	owner    string // unique bus name of the caller that started the tunnel
 	lastUsed time.Time
@@ -78,6 +79,7 @@ func serve() error {
 	node := `<node><interface name="` + tun.Interface + `">
   <method name="Start"><arg direction="in" type="s" name="paramsJson"/></method>
   <method name="Stop"/>
+  <method name="RestartCore"/>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>
   <method name="Logs"><arg direction="in" type="i" name="lines"/><arg direction="out" type="s" name="text"/></method>
   <signal name="StateChanged"><arg type="s" name="statusJson"/></signal>
@@ -272,7 +274,7 @@ func (h *helper) Start(paramsJSON string, sender dbus.Sender) *dbus.Error {
 	coreR.OnChange = func(core.State, string) { h.emit() }
 	tunR.OnChange = func(core.State, string) { h.emit() }
 	h.mu.Lock()
-	h.core, h.tunR, h.owner = coreR, tunR, string(sender)
+	h.core, h.coreSpec, h.tunR, h.owner = coreR, coreSpec, tunR, string(sender)
 	h.mu.Unlock()
 
 	h.logs.Add("helper: ", fmt.Sprintf("starting %s as uid %d and the TUN front-end", p.Core, uid))
@@ -307,6 +309,20 @@ func (h *helper) stop() {
 	_ = os.Remove(filepath.Join(tun.RuntimeDir, "tun.json"))
 	h.logs.Add("helper: ", "tunnel stopped, routes restored")
 	h.emit()
+}
+
+// RestartCore restarts only the proxy core after a network change: its
+// connections are bound to the old uplink, while the tunnel and the routing
+// stay in place, so no traffic leaks around the tunnel meanwhile.
+func (h *helper) RestartCore() *dbus.Error {
+	h.mu.Lock()
+	c, spec := h.core, h.coreSpec
+	h.mu.Unlock()
+	if c == nil {
+		return dbusErr(errors.New("tunnel is not running"))
+	}
+	h.logs.Add("helper: ", "restarting the core (network changed)")
+	return dbusErr(c.Start(spec))
 }
 
 func (h *helper) Stop() *dbus.Error {
