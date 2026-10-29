@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
@@ -167,7 +166,7 @@ func (a *api) GetHWID() (string, *dbus.Error) { return toJSON(a.svc.HWID()), nil
 func (a *api) ResetHWID() *dbus.Error { return dbusErr(a.svc.ResetHWID()) }
 
 func (a *api) Logs(n int32) (string, *dbus.Error) {
-	return strings.Join(a.svc.Logs.Tail(int(n)), "\n"), nil
+	return a.svc.LogsText(int(n)), nil
 }
 
 const introXML = `<interface name="` + Interface + `">

@@ -26,6 +26,11 @@ type Settings struct {
 	AuthEnabled bool   `json:"authEnabled"`
 	LogLevel    string `json:"logLevel"`
 
+	TunMode      bool   `json:"tunMode"` // route all device traffic through the root TUN helper
+	TunIPv6      bool   `json:"tunIpv6"` // proxy IPv6 inside the tunnel (else reject it)
+	BootstrapDNS string `json:"bootstrapDns"`
+	RemoteDNS    string `json:"remoteDns"`
+
 	UserAgent   string `json:"userAgent"`
 	HWIDEnabled bool   `json:"hwidEnabled"`
 	HWIDManual  string `json:"hwidManual"` // overrides the computed HWID when set
@@ -90,7 +95,8 @@ func Open(dir string) (*Store, error) {
 		profiles: map[string]*link.Profile{},
 		subs:     map[string]*Subscription{},
 		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning",
-			UserAgent: DefaultUserAgent, HWIDEnabled: true},
+			UserAgent: DefaultUserAgent, HWIDEnabled: true,
+			TunIPv6: true, BootstrapDNS: "1.1.1.1", RemoteDNS: "1.1.1.1"},
 	}
 	var list []*link.Profile
 	var subs []*Subscription

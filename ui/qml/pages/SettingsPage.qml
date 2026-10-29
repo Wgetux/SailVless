@@ -41,6 +41,42 @@ Page {
 
             PageHeader { title: qsTr("Settings") }
 
+            SectionHeader { text: qsTr("VPN mode") }
+
+            TextSwitch {
+                text: qsTr("Route all traffic (TUN)")
+                description: qsTr("Every app goes through the tunnel, no proxy settings needed. Uses a small system helper; local network stays direct. Do not enable another VPN (e.g. XHVPN) at the same time.")
+                checked: !!page.settings.tunMode
+                automaticCheck: false
+                onClicked: page.patch({ tunMode: !checked })
+            }
+            TextSwitch {
+                visible: !!page.settings.tunMode
+                text: qsTr("Proxy IPv6")
+                description: qsTr("Turn off if the server has no IPv6: apps will fall back to IPv4. IPv6 never bypasses the tunnel.")
+                checked: !!page.settings.tunIpv6
+                automaticCheck: false
+                onClicked: page.patch({ tunIpv6: !checked })
+            }
+            TextField {
+                visible: !!page.settings.tunMode
+                width: parent.width
+                label: qsTr("DNS through the tunnel")
+                text: page.settings.remoteDns || ""
+                inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+                EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                EnterKey.onClicked: { page.patch({ remoteDns: text.trim() }); focus = false }
+            }
+            TextField {
+                visible: !!page.settings.tunMode
+                width: parent.width
+                label: qsTr("DNS for server addresses (direct)")
+                text: page.settings.bootstrapDns || ""
+                inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
+                EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                EnterKey.onClicked: { page.patch({ bootstrapDns: text.trim() }); focus = false }
+            }
+
             SectionHeader { text: qsTr("Local proxy") }
 
             TextSwitch {
@@ -120,7 +156,7 @@ Page {
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryHighlightColor
-                text: qsTr("The Sailfish system proxy (Settings → Network) has no login/password fields, so it cannot be used together with authentication. Configure the proxy URL in each app, or use the TUN mode (planned) for system-wide routing.")
+                text: qsTr("The Sailfish system proxy (Settings → Network) has no login/password fields, so it cannot be used together with authentication. Configure the proxy URL in each app, or use the VPN mode (TUN) above for system-wide routing.")
             }
 
             SectionHeader { text: qsTr("Subscriptions") }

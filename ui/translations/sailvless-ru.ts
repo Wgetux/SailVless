@@ -172,6 +172,18 @@
         <translation>Потяните вниз, чтобы добавить подписку или ссылку</translation>
     </message>
     <message>
+        <source>Mode</source>
+        <translation>Режим</translation>
+    </message>
+    <message>
+        <source>all traffic (TUN)</source>
+        <translation>весь трафик (TUN)</translation>
+    </message>
+    <message>
+        <source>proxy only</source>
+        <translation>только прокси</translation>
+    </message>
+    <message>
         <source>Local proxy</source>
         <translation>Локальный прокси</translation>
     </message>
@@ -246,6 +258,34 @@
         <translation>Настройки</translation>
     </message>
     <message>
+        <source>VPN mode</source>
+        <translation>Режим VPN</translation>
+    </message>
+    <message>
+        <source>Route all traffic (TUN)</source>
+        <translation>Весь трафик через туннель (TUN)</translation>
+    </message>
+    <message>
+        <source>Every app goes through the tunnel, no proxy settings needed. Uses a small system helper; local network stays direct. Do not enable another VPN (e.g. XHVPN) at the same time.</source>
+        <translation>Все приложения идут через туннель, настраивать прокси не нужно. Работает через небольшую системную службу; локальная сеть — напрямую. Не включайте одновременно другой VPN (например, XHVPN).</translation>
+    </message>
+    <message>
+        <source>Proxy IPv6</source>
+        <translation>IPv6 через прокси</translation>
+    </message>
+    <message>
+        <source>Turn off if the server has no IPv6: apps will fall back to IPv4. IPv6 never bypasses the tunnel.</source>
+        <translation>Выключите, если у сервера нет IPv6: приложения перейдут на IPv4. Мимо туннеля IPv6 не уходит в любом случае.</translation>
+    </message>
+    <message>
+        <source>DNS through the tunnel</source>
+        <translation>DNS через туннель</translation>
+    </message>
+    <message>
+        <source>DNS for server addresses (direct)</source>
+        <translation>DNS для адресов серверов (напрямую)</translation>
+    </message>
+    <message>
         <source>Local proxy</source>
         <translation>Локальный прокси</translation>
     </message>
@@ -310,8 +350,8 @@
         <translation>Прокси откроется для сети</translation>
     </message>
     <message>
-        <source>The Sailfish system proxy (Settings → Network) has no login/password fields, so it cannot be used together with authentication. Configure the proxy URL in each app, or use the TUN mode (planned) for system-wide routing.</source>
-        <translation>В системном прокси Sailfish (Настройки → Сеть) нет полей для логина и пароля, поэтому его нельзя использовать вместе с авторизацией. Укажите адрес прокси в каждом приложении или используйте TUN-режим (в разработке) для всего трафика.</translation>
+        <source>The Sailfish system proxy (Settings → Network) has no login/password fields, so it cannot be used together with authentication. Configure the proxy URL in each app, or use the VPN mode (TUN) above for system-wide routing.</source>
+        <translation>В системном прокси Sailfish (Настройки → Сеть) нет полей для логина и пароля, поэтому его нельзя использовать вместе с авторизацией. Укажите адрес прокси в каждом приложении или включите режим VPN (TUN) выше — тогда через туннель пойдёт весь трафик.</translation>
     </message>
     <message>
         <source>Subscriptions</source>

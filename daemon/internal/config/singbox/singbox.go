@@ -54,6 +54,14 @@ func Build(p *link.Profile, o Options) ([]byte, []string, error) {
 			full["log"] = logCfg(o.LogLevel)
 			// foreign experimental settings may write files or open UIs; replace them
 			full["experimental"] = experimental(o)
+			if o.Mark != 0 {
+				route, _ := full["route"].(map[string]any)
+				if route == nil {
+					route = obj{}
+				}
+				route["default_mark"] = o.Mark
+				full["route"] = route
+			}
 			b, err := json.MarshalIndent(full, "", "  ")
 			return b, nil, err
 		}
@@ -72,6 +80,9 @@ func Build(p *link.Profile, o Options) ([]byte, []string, error) {
 			"rules":                   []any{obj{"action": "sniff"}},
 		},
 		"experimental": experimental(o),
+	}
+	if o.Mark != 0 {
+		cfg["route"].(obj)["default_mark"] = o.Mark
 	}
 	b, err := json.MarshalIndent(cfg, "", "  ")
 	return b, warnings, err

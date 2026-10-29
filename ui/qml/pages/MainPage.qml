@@ -193,6 +193,11 @@ Page {
                 }
             }
 
+            DetailItem {
+                label: qsTr("Mode")
+                value: app.status.tun ? qsTr("all traffic (TUN)") : qsTr("proxy only")
+            }
+
             SectionHeader { text: qsTr("Local proxy") }
 
             DetailItem {

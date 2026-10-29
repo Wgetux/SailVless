@@ -30,6 +30,9 @@ type Spec struct {
 	RunArgs   []string
 	Env       []string
 	ReadyAddr string // TCP address that accepts connections once the core is up
+	// Attr overrides process attributes (credentials, ambient capabilities);
+	// it must keep Pdeathsig so the child dies with its supervisor.
+	Attr *syscall.SysProcAttr
 }
 
 type Runner struct {
@@ -76,6 +79,7 @@ func (r *Runner) Start(spec Spec) error {
 	if spec.TestArgs != nil {
 		cmd := exec.Command(spec.Bin, spec.TestArgs...)
 		cmd.Env = spec.Env
+		cmd.SysProcAttr = spec.Attr // same user as the real run
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			msg := lastLines(string(out), 5)
@@ -131,6 +135,9 @@ func (r *Runner) runOnce(ctx context.Context, spec Spec) error {
 	cmd := exec.Command(spec.Bin, spec.RunArgs...)
 	cmd.Env = spec.Env
 	cmd.SysProcAttr = procAttr()
+	if spec.Attr != nil {
+		cmd.SysProcAttr = spec.Attr
+	}
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
 	if err := cmd.Start(); err != nil {

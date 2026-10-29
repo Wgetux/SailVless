@@ -48,7 +48,7 @@ if ($Rpm) {
         $env:Path += ';C:\SailfishOS\bin'
     }
     if (-not (Get-Command sfdk -ErrorAction SilentlyContinue)) { throw 'sfdk not found. Install Sailfish SDK 3.13.5 (Docker build engine).' }
-    foreach ($b in 'sailvlessd', 'xray', 'sing-box') {
+    foreach ($b in 'sailvlessd', 'sailvless-tun-helper', 'xray', 'sing-box') {
         if (-not (Test-Path (Join-Path $outBin $b))) { throw "out\bin\$b missing (run .\build.ps1 -Cores once)" }
     }
     & (Join-Path $root 'ui\translations\gen-ts.ps1')

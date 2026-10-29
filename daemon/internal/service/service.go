@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/godbus/dbus/v5"
+
 	"sailvless/internal/config/singbox"
 	"sailvless/internal/config/xray"
 	"sailvless/internal/core"
@@ -21,6 +23,7 @@ import (
 	"sailvless/internal/link"
 	"sailvless/internal/store"
 	"sailvless/internal/sub"
+	"sailvless/internal/tun"
 )
 
 type Service struct {
@@ -39,6 +42,11 @@ type Service struct {
 	activeCfg store.Settings
 	stats     *statsSource
 	pings     map[string]int
+
+	tunConn   *dbus.Conn
+	tunActive bool
+	tunState  tunStatus
+	tunLostAt time.Time
 }
 
 var errNoReachable = errors.New("no reachable server")
@@ -54,6 +62,7 @@ type Status struct {
 	SocksPort   int        `json:"socksPort"`
 	HTTPPort    int        `json:"httpPort"`
 	Auth        bool       `json:"auth"`
+	Tun         bool       `json:"tun"`
 	Traffic     *Traffic   `json:"traffic,omitempty"`
 }
 
@@ -177,6 +186,9 @@ func (s *Service) Connect(id string) error {
 		APIListen: net.JoinHostPort("127.0.0.1", strconv.Itoa(apiPort)),
 		APISecret: store.RandomToken(16),
 	}
+	if set.TunMode {
+		opts.Mark = tun.Mark
+	}
 	coreName := p.Core()
 	var cfg []byte
 	var warnings []string
@@ -203,14 +215,23 @@ func (s *Service) Connect(id string) error {
 		}
 	}
 	s.removeConfigs()
-	path := filepath.Join(s.RuntimeDir, coreName+".json")
-	if err := os.WriteFile(path, cfg, 0o600); err != nil {
-		return err
-	}
 	s.mu.Lock()
 	s.activeID, s.activeCfg = id, set
 	s.stats = newStatsSource(coreName, s.CoreDir, apiPort, opts.APISecret)
 	s.mu.Unlock()
+
+	if set.TunMode {
+		// the root helper runs the core (with CAP_NET_ADMIN for SO_MARK) and the tunnel
+		s.Runner.Stop()
+		s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via %s in TUN mode", p.Name, coreName))
+		return s.startTun(&p, coreName, cfg, set, user, pass)
+	}
+	s.stopTun()
+
+	path := filepath.Join(s.RuntimeDir, coreName+".json")
+	if err := os.WriteFile(path, cfg, 0o600); err != nil {
+		return err
+	}
 	s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via %s", p.Name, coreName))
 	spec := core.Spec{
 		Name:      coreName,
@@ -282,6 +303,7 @@ func (s *Service) Disconnect() {
 // Shutdown stops the core but keeps the user's intent (daemon exit, upgrade).
 func (s *Service) Shutdown() {
 	s.Runner.Stop()
+	s.stopTun()
 	s.mu.Lock()
 	s.activeID, s.stats = "", nil
 	s.mu.Unlock()
@@ -314,11 +336,18 @@ func (s *Service) Status() Status {
 	st, msg, since := s.Runner.Status()
 	s.mu.Lock()
 	id, set := s.activeID, s.activeCfg
+	tunOn, ts := s.tunActive, s.tunState
 	s.mu.Unlock()
+	if tunOn {
+		st, msg, since = ts.coreState(), ts.Error, time.Time{}
+		if ts.Since > 0 {
+			since = time.Unix(ts.Since, 0)
+		}
+	}
 	if id == "" {
 		set = s.Store.Settings()
 	}
-	out := Status{State: st, Error: msg, ProfileID: id, Listen: set.Listen, SocksPort: set.SocksPort, HTTPPort: set.HTTPPort, Auth: set.AuthEnabled}
+	out := Status{State: st, Error: msg, ProfileID: id, Listen: set.Listen, SocksPort: set.SocksPort, HTTPPort: set.HTTPPort, Auth: set.AuthEnabled, Tun: tunOn}
 	if p, ok := s.Store.Profile(id); ok {
 		out.ProfileName = p.Name
 		out.Core = p.Core()
@@ -371,6 +400,11 @@ func validate(v store.Settings) error {
 	case "debug", "info", "warning", "error", "none":
 	default:
 		return fmt.Errorf("bad log level %q", v.LogLevel)
+	}
+	for _, d := range []string{v.BootstrapDNS, v.RemoteDNS} {
+		if net.ParseIP(d) == nil {
+			return fmt.Errorf("DNS server must be an IP address: %q", d)
+		}
 	}
 	if strings.TrimSpace(v.UserAgent) == "" {
 		return fmt.Errorf("user agent must not be empty")

@@ -1,6 +1,6 @@
 Name:       sailvless
 Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC proxy client
-Version:    0.4.3
+Version:    0.5.1
 Release:    1
 # own code + bundled cores: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later)
 License:    MPL-2.0 AND GPL-3.0-or-later
@@ -46,17 +46,27 @@ install -D -m 644 systemd/sailvlessd.service %{buildroot}%{userunitdir}/sailvles
 mkdir -p %{buildroot}%{userunitdir}/user-session.target.wants
 ln -s ../sailvlessd.service %{buildroot}%{userunitdir}/user-session.target.wants/sailvlessd.service
 install -D -m 644 dbus/org.sailvless.Daemon.service %{buildroot}%{_datadir}/dbus-1/services/org.sailvless.Daemon.service
+# TUN helper: root, started on demand over the system bus
+install -D -m 755 bin/sailvless-tun-helper %{buildroot}%{_libexecdir}/sailvless/sailvless-tun-helper
+install -D -m 644 systemd/sailvless-tun.service %{buildroot}%{_unitdir}/sailvless-tun.service
+install -D -m 644 dbus/org.sailvless.Tun.conf %{buildroot}%{_sysconfdir}/dbus-1/system.d/org.sailvless.Tun.conf
+install -D -m 644 dbus/org.sailvless.Tun.system.service %{buildroot}%{_datadir}/dbus-1/system-services/org.sailvless.Tun.service
 
 %post
+systemctl daemon-reload || :
+# a running tunnel is torn down (routes restored); the user daemon starts it again
+systemctl try-restart sailvless-tun.service || :
 systemctl-user daemon-reload || :
 systemctl-user try-restart sailvlessd.service || :
 
 %preun
 if [ $1 -eq 0 ]; then
     systemctl-user stop sailvlessd.service || :
+    systemctl stop sailvless-tun.service || :
 fi
 
 %postun
+systemctl daemon-reload || :
 systemctl-user daemon-reload || :
 
 %files
@@ -70,3 +80,6 @@ systemctl-user daemon-reload || :
 %{userunitdir}/sailvlessd.service
 %{userunitdir}/user-session.target.wants/sailvlessd.service
 %{_datadir}/dbus-1/services/org.sailvless.Daemon.service
+%{_unitdir}/sailvless-tun.service
+%config %{_sysconfdir}/dbus-1/system.d/org.sailvless.Tun.conf
+%{_datadir}/dbus-1/system-services/org.sailvless.Tun.service

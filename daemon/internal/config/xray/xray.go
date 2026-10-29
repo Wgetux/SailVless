@@ -24,6 +24,34 @@ type Options struct {
 	// (Xray StatsService / sing-box clash API protected by APISecret).
 	APIListen string
 	APISecret string
+	// Mark (SO_MARK) is set on every outbound socket in TUN mode so the
+	// core's own traffic bypasses the tunnel. 0 = off.
+	Mark int
+}
+
+// addMark sets sockopt.mark on all outbounds (including foreign configs).
+func addMark(cfg map[string]any, mark int) {
+	if mark == 0 {
+		return
+	}
+	outs, _ := cfg["outbounds"].([]any)
+	for _, o := range outs {
+		ob, ok := o.(map[string]any)
+		if !ok {
+			continue
+		}
+		ss, _ := ob["streamSettings"].(map[string]any)
+		if ss == nil {
+			ss = obj{}
+			ob["streamSettings"] = ss
+		}
+		so, _ := ss["sockopt"].(map[string]any)
+		if so == nil {
+			so = obj{}
+			ss["sockopt"] = so
+		}
+		so["mark"] = mark
+	}
 }
 
 // addStats enables per-outbound traffic counters and the stats API.
@@ -64,6 +92,7 @@ func Build(p *link.Profile, o Options) ([]byte, error) {
 		"outbounds": []any{out, obj{"tag": "direct", "protocol": "freedom"}, obj{"tag": "block", "protocol": "blackhole"}},
 	}
 	addStats(cfg, o.APIListen)
+	addMark(cfg, o.Mark)
 	return json.MarshalIndent(cfg, "", "  ")
 }
 
@@ -140,6 +169,7 @@ func BuildRaw(raw string, o Options) ([]byte, error) {
 	delete(logCfg, "error")
 	cfg["log"] = logCfg
 	addStats(cfg, o.APIListen)
+	addMark(cfg, o.Mark)
 	return json.MarshalIndent(cfg, "", "  ")
 }
 

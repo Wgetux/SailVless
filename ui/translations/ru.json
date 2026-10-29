@@ -77,7 +77,6 @@
   "Send device ID (HWID)": "Отправлять ID устройства (HWID)",
   "SOCKS5 port": "Порт SOCKS5",
   "The panel will see a new device": "Панель увидит новое устройство",
-  "The Sailfish system proxy (Settings → Network) has no login/password fields, so it cannot be used together with authentication. Configure the proxy URL in each app, or use the TUN mode (planned) for system-wide routing.": "В системном прокси Sailfish (Настройки → Сеть) нет полей для логина и пароля, поэтому его нельзя использовать вместе с авторизацией. Укажите адрес прокси в каждом приложении или используйте TUN-режим (в разработке) для всего трафика.",
   "Update geo databases": "Обновить гео-базы",
   "User-Agent": "User-Agent",
   "Version": "Версия",
@@ -90,7 +89,11 @@
   "As the panel says": "Как указано в панели",
   "Device limit (HWID)": "Лимит устройств (HWID)",
   "Downloaded": "Скачано",
-  "Every %n hour(s)": ["Каждый %n час", "Каждые %n часа", "Каждые %n часов"],
+  "Every %n hour(s)": [
+    "Каждый %n час",
+    "Каждые %n часа",
+    "Каждые %n часов"
+  ],
   "Expires": "Действует до",
   "Format": "Формат",
   "Interval": "Интервал",
@@ -110,7 +113,11 @@
   "Use when the panel is blocked by your provider. Falls back to a direct request.": "Если панель заблокирована провайдером. При неудаче — прямой запрос.",
   "%1 of %2": "%1 из %2",
   "%1 used": "использовано %1",
-  "%n server(s)": ["%n сервер", "%n сервера", "%n серверов"],
+  "%n server(s)": [
+    "%n сервер",
+    "%n сервера",
+    "%n серверов"
+  ],
   "Add subscription": "Добавить подписку",
   "No subscriptions": "Нет подписок",
   "Pull down to add one": "Потяните вниз, чтобы добавить",
@@ -118,5 +125,16 @@
   "until %1": "до %1",
   "Update": "Обновить",
   "Update all": "Обновить все",
-  "Updated %1": "Обновлено %1"
+  "Updated %1": "Обновлено %1",
+  "VPN mode": "Режим VPN",
+  "Route all traffic (TUN)": "Весь трафик через туннель (TUN)",
+  "Every app goes through the tunnel, no proxy settings needed. Uses a small system helper; local network stays direct. Do not enable another VPN (e.g. XHVPN) at the same time.": "Все приложения идут через туннель, настраивать прокси не нужно. Работает через небольшую системную службу; локальная сеть — напрямую. Не включайте одновременно другой VPN (например, XHVPN).",
+  "Proxy IPv6": "IPv6 через прокси",
+  "Turn off if the server has no IPv6: apps will fall back to IPv4. IPv6 never bypasses the tunnel.": "Выключите, если у сервера нет IPv6: приложения перейдут на IPv4. Мимо туннеля IPv6 не уходит в любом случае.",
+  "DNS through the tunnel": "DNS через туннель",
+  "DNS for server addresses (direct)": "DNS для адресов серверов (напрямую)",
+  "The Sailfish system proxy (Settings → Network) has no login/password fields, so it cannot be used together with authentication. Configure the proxy URL in each app, or use the VPN mode (TUN) above for system-wide routing.": "В системном прокси Sailfish (Настройки → Сеть) нет полей для логина и пароля, поэтому его нельзя использовать вместе с авторизацией. Укажите адрес прокси в каждом приложении или включите режим VPN (TUN) выше — тогда через туннель пойдёт весь трафик.",
+  "Mode": "Режим",
+  "all traffic (TUN)": "весь трафик (TUN)",
+  "proxy only": "только прокси"
 }

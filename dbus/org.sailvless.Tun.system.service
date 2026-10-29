@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=org.sailvless.Tun
+Exec=/bin/false
+User=root
+SystemdService=sailvless-tun.service
