@@ -45,6 +45,27 @@ var russian = func() bool {
 	return strings.HasPrefix(lang, "ru")
 }()
 
+// flagsToCodes turns flag emoji (regional indicator pairs, missing from
+// Sailfish fonts) into country codes: "🇫🇮 Finland" -> "FI Finland".
+func flagsToCodes(s string) string {
+	var b strings.Builder
+	rs := []rune(s)
+	for i := 0; i < len(rs); i++ {
+		r := rs[i]
+		if r >= 0x1F1E6 && r <= 0x1F1FF && i+1 < len(rs) && rs[i+1] >= 0x1F1E6 && rs[i+1] <= 0x1F1FF {
+			b.WriteRune('A' + r - 0x1F1E6)
+			b.WriteRune('A' + rs[i+1] - 0x1F1E6)
+			i++
+			if i+1 < len(rs) && rs[i+1] != ' ' {
+				b.WriteRune(' ')
+			}
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
 func tr(s string) string {
 	if russian {
 		if t, ok := ruTexts[s]; ok {
@@ -59,7 +80,7 @@ func (s *Service) notify(key, summary, body string) {
 	if s.Notify == nil {
 		return
 	}
-	summary, body = tr(summary), tr(body)
+	summary, body = tr(summary), flagsToCodes(tr(body))
 	notifyState.Lock()
 	if notifyState.last == nil {
 		notifyState.last = map[string]time.Time{}
