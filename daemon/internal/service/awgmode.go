@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -62,11 +63,16 @@ func (s *Service) awgSidecar(p *link.Profile, set store.Settings) (link.Profile,
 //     the user's own rules still come first;
 //   - the config's DNS server is used through the tunnel (AntiZapret's DNS
 //     decides what is blocked).
-func awgRouting(p *link.Profile, rc routing.Config) (routing.Config, string) {
+//
+// It also returns the private networks among a split config's AllowedIPs
+// (e.g. AntiZapret's 10.30.0.0/15 fake addresses): the TUN must route them
+// into the tunnel although LAN ranges are excluded otherwise.
+func awgRouting(p *link.Profile, rc routing.Config) (routing.Config, string, []string) {
 	cfg, err := awg.Parse(p.Raw)
 	if err != nil {
-		return rc, ""
+		return rc, "", nil
 	}
+	var include []string
 	dns := ""
 	if len(cfg.DNS) > 0 {
 		dns = cfg.DNS[0].String()
@@ -76,10 +82,13 @@ func awgRouting(p *link.Profile, rc routing.Config) (routing.Config, string) {
 		rules := append([]routing.Rule(nil), rc.Rules...)
 		for _, n := range nets {
 			rules = append(rules, routing.Rule{Kind: "ip", Value: n, Action: "proxy"})
+			if pfx, err := netip.ParsePrefix(n); err == nil && pfx.Addr().IsPrivate() {
+				include = append(include, pfx.Masked().String())
+			}
 		}
 		rc.Rules, rc.Mode, rc.CustomFinal = rules, routing.Custom, "direct"
 	}
-	return rc, dns
+	return rc, dns, include
 }
 
 // ImportFile imports configs from a file chosen in the UI (AmneziaWG/WireGuard

@@ -60,9 +60,12 @@ Dialog {
                 }
                 Button {
                     text: qsTr("Choose files")
-                    // after picking, return past this dialog straight to where import was opened
+                    // after picking, return past this dialog straight to where import was opened.
+                    // The picker derives acceptDestination from _maskedAcceptDestination and
+                    // hands it to its directory pages; setting acceptDestination directly
+                    // breaks that and the picker cannot open folders.
                     onClicked: pageStack.push(filePicker, {
-                        acceptDestination: pageStack.previousPage(dialog),
+                        _maskedAcceptDestination: pageStack.previousPage(dialog),
                         acceptDestinationAction: PageStackAction.Pop
                     })
                 }

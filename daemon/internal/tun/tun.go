@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"path"
 	"strings"
 )
@@ -39,6 +40,9 @@ type Params struct {
 	AssetDir   string `json:"assetDir"`   // XRAY_LOCATION_ASSET
 	// Sidecar: settings for sailvless-awg (AmneziaWG profiles), run next to the core
 	Sidecar string `json:"sidecar,omitempty"`
+	// Include: private networks that must still go through the tunnel
+	// (e.g. AntiZapret's 10.30.0.0/15 fake addresses); the rest of the LAN stays direct
+	Include []string `json:"include,omitempty"`
 
 	SocksPort int    `json:"socksPort"` // core's local SOCKS inbound
 	User      string `json:"user"`
@@ -78,6 +82,11 @@ func (p *Params) Validate() error {
 	for _, d := range p.ServerDomains {
 		if d == "" || strings.ContainsAny(d, " /\"") {
 			return fmt.Errorf("bad server domain %q", d)
+		}
+	}
+	for _, c := range p.Include {
+		if _, err := netip.ParsePrefix(c); err != nil {
+			return fmt.Errorf("bad include network %q", c)
 		}
 	}
 	for d, ips := range p.ServerHosts {
@@ -152,8 +161,24 @@ func SingBoxConfig(p Params) ([]byte, error) {
 	routeRules := []any{
 		obj{"action": "sniff"},
 		obj{"protocol": "dns", "action": "hijack-dns"},
-		obj{"ip_is_private": true, "outbound": "direct"},
 	}
+	// private networks that belong to the tunnel are carved out of the LAN exclusion
+	exclude := privateRanges
+	if len(p.Include) > 0 {
+		var inc, priv []netip.Prefix
+		for _, c := range p.Include {
+			inc = append(inc, netip.MustParsePrefix(c))
+		}
+		for _, c := range privateRanges {
+			priv = append(priv, netip.MustParsePrefix(c))
+		}
+		exclude = nil
+		for _, pfx := range subtract(priv, inc) {
+			exclude = append(exclude, pfx.String())
+		}
+		routeRules = append(routeRules, obj{"ip_cidr": p.Include, "outbound": "proxy"})
+	}
+	routeRules = append(routeRules, obj{"ip_is_private": true, "outbound": "direct"})
 	if !p.IPv6 {
 		routeRules = append(routeRules, obj{"ip_version": 6, "action": "reject"})
 	}
@@ -171,7 +196,7 @@ func SingBoxConfig(p Params) ([]byte, error) {
 			"auto_route":            true,
 			"iproute2_rule_index":   RuleIndex,
 			"iproute2_table_index":  TableIndex,
-			"route_exclude_address": privateRanges,
+			"route_exclude_address": exclude,
 		}},
 		"outbounds": []any{
 			socks,

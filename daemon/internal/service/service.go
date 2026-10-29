@@ -223,7 +223,8 @@ func (s *Service) Connect(id string) error {
 	coreName := p.Core()
 	var cfg []byte
 	var warnings []string
-	var sidecar []byte // sailvless-awg settings for AmneziaWG profiles
+	var sidecar []byte      // sailvless-awg settings for AmneziaWG profiles
+	var tunInclude []string // private networks the TUN must not exclude
 	switch {
 	case coreName == "sing-box":
 		cfg, warnings, err = singbox.Build(&p, opts)
@@ -235,8 +236,9 @@ func (s *Service) Connect(id string) error {
 		var chained link.Profile
 		chained, sidecar, err = s.awgSidecar(&p, set)
 		if err == nil {
-			awgRC, dns := awgRouting(&p, rc)
+			awgRC, dns, include := awgRouting(&p, rc)
 			opts.Routing = &awgRC
+			tunInclude = include
 			if dns != "" {
 				set.RemoteDNS = dns // the TUN asks the same DNS through the tunnel
 			}
@@ -270,7 +272,7 @@ func (s *Service) Connect(id string) error {
 		s.Runner.Stop()
 		s.Sidecar.Stop()
 		s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via %s in TUN mode", p.Name, coreName))
-		return s.startTun(&p, coreName, cfg, set, user, pass, sidecar)
+		return s.startTun(&p, coreName, cfg, set, user, pass, sidecar, tunInclude)
 	}
 	s.stopTun()
 	if err := s.startSidecar(sidecar); err != nil {

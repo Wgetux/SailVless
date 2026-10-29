@@ -95,7 +95,7 @@ func (s *Service) tunBus() (*dbus.Conn, error) {
 	return c, nil
 }
 
-func (s *Service) startTun(p *link.Profile, coreName string, cfg []byte, set store.Settings, user, pass string, sidecar []byte) error {
+func (s *Service) startTun(p *link.Profile, coreName string, cfg []byte, set store.Settings, user, pass string, sidecar []byte, include []string) error {
 	c, err := s.tunBus()
 	if err != nil {
 		return err
@@ -109,6 +109,7 @@ func (s *Service) startTun(p *link.Profile, coreName string, cfg []byte, set sto
 		BootstrapDNS:  set.BootstrapDNS, RemoteDNS: set.RemoteDNS,
 		IPv6:    set.TunIPv6,
 		Sidecar: string(sidecar),
+		Include: include,
 	}
 	b, _ := json.Marshal(params)
 	s.mu.Lock()
