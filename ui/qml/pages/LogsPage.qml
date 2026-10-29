@@ -21,7 +21,13 @@ Page {
 
     Component.onCompleted: {
         load()
-        daemon.call("GetSettings", [], function (err, r) { if (!err) page.level = Util.parse(r, {}).logLevel || "warning" })
+        daemon.call("GetSettings", [], function (err, r) {
+            if (err)
+                return
+            page.level = Util.parse(r, {}).logLevel || "warning"
+            // the Silica 5.1 ComboBox ignores later changes of a bound currentIndex
+            combo.currentIndex = Math.max(0, combo.values.indexOf(page.level))
+        })
     }
 
     Timer {
