@@ -175,5 +175,8 @@
   "geosite category": "категория geosite",
   "IP or subnet": "IP или подсеть",
   "Match": "Условие",
-  "Off (recommended): apps use IPv4 only. On: IPv6 sites go through the server too (the server must support IPv6). IPv6 never bypasses the tunnel.": "Выключено (рекомендуется): приложения используют только IPv4. Включено: IPv6-сайты тоже идут через сервер (сервер должен поддерживать IPv6). Мимо туннеля IPv6 не уходит в любом случае."
+  "Off (recommended): apps use IPv4 only. On: IPv6 sites go through the server too (the server must support IPv6). IPv6 never bypasses the tunnel.": "Выключено (рекомендуется): приложения используют только IPv4. Включено: IPv6-сайты тоже идут через сервер (сервер должен поддерживать IPv6). Мимо туннеля IPv6 не уходит в любом случае.",
+  "Geo databases": "Гео-базы",
+  "not downloaded yet": "ещё не скачаны",
+  "geoip/geosite from %1, checked with SHA-256. Downloaded when routing first needs them and refreshed weekly; a running connection picks them up on the next connect.": "geoip/geosite из %1, с проверкой SHA-256. Скачиваются, когда впервые понадобятся маршрутизации, и обновляются раз в неделю; текущее подключение подхватит их при следующем подключении."
 }

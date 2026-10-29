@@ -161,6 +161,23 @@ func (a *api) SetSubscription(id, patch string) *dbus.Error {
 
 func (a *api) UpdateGeo() *dbus.Error { return dbusErr(a.svc.UpdateGeo()) }
 
+func (a *api) GetGeoInfo() (string, *dbus.Error) { return toJSON(a.svc.GeoInfo()), nil }
+
+// Notifier sends notifications through the freedesktop interface that
+// lipstick implements; the nemo hints make Sailfish show a banner too.
+func Notifier(conn *dbus.Conn) func(summary, body string) {
+	return func(summary, body string) {
+		hints := map[string]dbus.Variant{
+			"x-nemo-preview-summary": dbus.MakeVariant(summary),
+			"x-nemo-preview-body":    dbus.MakeVariant(body),
+		}
+		obj := conn.Object("org.freedesktop.Notifications", "/org/freedesktop/Notifications")
+		obj.Go("org.freedesktop.Notifications.Notify", 0, nil,
+			"SailVless", uint32(0), "/usr/share/icons/hicolor/86x86/apps/sailvless.png",
+			summary, body, []string{}, hints, int32(-1))
+	}
+}
+
 func (a *api) GetHWID() (string, *dbus.Error) { return toJSON(a.svc.HWID()), nil }
 
 func (a *api) ResetHWID() *dbus.Error { return dbusErr(a.svc.ResetHWID()) }
@@ -190,6 +207,7 @@ const introXML = `<interface name="` + Interface + `">
   <method name="DeleteSubscription"><arg direction="in" type="s" name="id"/></method>
   <method name="SetSubscription"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="patchJson"/></method>
   <method name="UpdateGeo"/>
+  <method name="GetGeoInfo"><arg direction="out" type="s" name="geoJson"/></method>
   <method name="GetHWID"><arg direction="out" type="s" name="hwidJson"/></method>
   <method name="ResetHWID"/>
   <method name="Logs"><arg direction="in" type="i" name="lines"/><arg direction="out" type="s" name="text"/></method>

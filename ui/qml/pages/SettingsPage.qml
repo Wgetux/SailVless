@@ -9,6 +9,7 @@ Page {
     property var creds: ["", ""]
     property var hwid: ({})
     property bool geoBusy: false
+    property var geoInfo: ({})
 
     readonly property bool exposed: settings.listen !== undefined && settings.listen !== "127.0.0.1" && settings.listen !== "::1"
 
@@ -16,6 +17,7 @@ Page {
         daemon.call("GetSettings", [], function (err, r) { if (!err) settings = Util.parse(r, {}) })
         daemon.call("GetProxyCredentials", [], function (err, r) { if (!err) creds = Util.parse(r, ["", ""]) })
         daemon.call("GetHWID", [], function (err, r) { if (!err) hwid = Util.parse(r, {}) })
+        daemon.call("GetGeoInfo", [], function (err, r) { if (!err) geoInfo = Util.parse(r, {}) })
     }
 
     function patch(obj) {
@@ -227,6 +229,18 @@ Page {
                 }
             }
 
+            DetailItem {
+                label: qsTr("Geo databases")
+                value: page.geoInfo.updated ? Util.date(page.geoInfo.updated) : qsTr("not downloaded yet")
+            }
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * x
+                wrapMode: Text.Wrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+                text: qsTr("geoip/geosite from %1, checked with SHA-256. Downloaded when routing first needs them and refreshed weekly; a running connection picks them up on the next connect.").arg(page.geoInfo.source || "Loyalsoldier")
+            }
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: page.geoBusy ? qsTr("Downloading…") : qsTr("Update geo databases")
@@ -236,6 +250,7 @@ Page {
                     daemon.call("UpdateGeo", [], function (err) {
                         page.geoBusy = false
                         app.notify(err ? err : qsTr("Geo databases updated"))
+                        page.load()
                     }, 600000)
                 }
             }

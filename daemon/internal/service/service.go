@@ -36,6 +36,8 @@ type Service struct {
 
 	// OnState is called on every connection state change.
 	OnState func(Status)
+	// Notify shows system notifications (optional).
+	Notify Notifier
 
 	// opMu serializes Connect/Disconnect/Shutdown: concurrent callers (UI,
 	// settings change, network change, helper loss) would remove each other's configs

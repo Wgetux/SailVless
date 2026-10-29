@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"sailvless/internal/core"
+	"sailvless/internal/geo"
 	"sailvless/internal/link"
 	"sailvless/internal/store"
 	"sailvless/internal/sub"
@@ -113,6 +114,9 @@ func (s *Service) UpdateSubscription(id string) error {
 		sb.LastError = err.Error()
 		_ = s.Store.SaveSubscription(sb, "")
 		s.Logs.Add("sailvlessd: ", fmt.Sprintf("subscription %s: update failed: %v", id, err))
+		if errors.Is(err, sub.ErrHWIDLimit) {
+			s.notify("device limit", "Subscription: device limit reached", "Remove an old device in your panel or bot, then update the subscription.")
+		}
 		return err
 	}
 	for _, e := range perrs {
@@ -192,12 +196,22 @@ func interval(sb store.Subscription) int {
 	return 24
 }
 
-// AutoUpdateLoop refreshes due subscriptions; failed ones are retried after 30 minutes.
+// GeoMaxAge is how old geo databases may get before the weekly refresh.
+const GeoMaxAge = 7 * 24 * time.Hour
+
+// AutoUpdateLoop refreshes due subscriptions (failed ones are retried after
+// 30 minutes) and geo databases once a week, if they are in use at all.
 func (s *Service) AutoUpdateLoop(ctx context.Context) {
 	lastTry := map[string]time.Time{}
+	var lastGeoTry time.Time
 	t := time.NewTicker(5 * time.Minute)
 	defer t.Stop()
 	for {
+		if upd := geo.Updated(s.GeoDir); !upd.IsZero() && time.Since(upd) > GeoMaxAge && time.Since(lastGeoTry) > 6*time.Hour {
+			lastGeoTry = time.Now()
+			// the running core keeps the old data until the next connect
+			_ = s.UpdateGeo()
+		}
 		for _, sb := range s.Store.Subscriptions() {
 			if !sb.AutoUpdate {
 				continue

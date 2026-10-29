@@ -37,6 +37,21 @@ func Missing(dir string) []string {
 	return out
 }
 
+// Updated returns the modification time of the oldest geo file (zero if any is missing).
+func Updated(dir string) time.Time {
+	var oldest time.Time
+	for _, f := range Files {
+		st, err := os.Stat(filepath.Join(dir, f))
+		if err != nil {
+			return time.Time{}
+		}
+		if oldest.IsZero() || st.ModTime().Before(oldest) {
+			oldest = st.ModTime()
+		}
+	}
+	return oldest
+}
+
 // NeedsGeo tells whether a config references geoip:/geosite: rules.
 func NeedsGeo(config []byte) bool {
 	s := string(config)

@@ -596,6 +596,18 @@
         <translation>Уровень логов</translation>
     </message>
     <message>
+        <source>Geo databases</source>
+        <translation>Гео-базы</translation>
+    </message>
+    <message>
+        <source>not downloaded yet</source>
+        <translation>ещё не скачаны</translation>
+    </message>
+    <message>
+        <source>geoip/geosite from %1, checked with SHA-256. Downloaded when routing first needs them and refreshed weekly; a running connection picks them up on the next connect.</source>
+        <translation>geoip/geosite из %1, с проверкой SHA-256. Скачиваются, когда впервые понадобятся маршрутизации, и обновляются раз в неделю; текущее подключение подхватит их при следующем подключении.</translation>
+    </message>
+    <message>
         <source>Downloading…</source>
         <translation>Загрузка…</translation>
     </message>
