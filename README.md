@@ -10,8 +10,12 @@
 - **Протоколы:** VLESS (REALITY, Vision, XHTTP), VMess, Trojan, Shadowsocks (включая 2022) — ядро Xray;
   Hysteria2 (перескок портов, salamander) и TUIC — ядро sing-box. Ядро выбирается автоматически.
 - **Транспорты:** TCP (в т.ч. HTTP-маскировка), WebSocket, gRPC, HTTPUpgrade, XHTTP; TLS / REALITY, uTLS-fingerprint, SNI, ALPN.
-- **Импорт:** ссылки `vless:// vmess:// trojan:// ss:// hysteria2:// hy2:// tuic://` из буфера или вручную,
-  полный JSON-конфиг Xray или sing-box.
+- **AmneziaWG** (и обычный WireGuard): конфиг `.conf` или ссылка AmneziaVPN `vpn://`; параметры обфускации
+  AWG 1.0/1.5/2.0 (Jc, Jmin, Jmax, S1–S4, H1–H4, I1–I5). Работает в userspace (официальная библиотека amneziawg-go
+  и сетевой стек gVisor) без своего TUN и без root: `sailvless-awg` отдаёт туннель как SOCKS5, а Xray подключается
+  к нему, поэтому маршрутизация, локальный прокси, TUN-режим и проверка живости работают и для AWG.
+- **Импорт:** ссылки `vless:// vmess:// trojan:// ss:// hysteria2:// hy2:// tuic:// vpn://` из буфера или вручную,
+  полный JSON-конфиг Xray или sing-box, конфиг AmneziaWG/WireGuard.
 - **Подписки:** base64, список ссылок, Xray JSON (массив конфигов), sing-box JSON; заголовки `subscription-userinfo`
   (трафик и срок), `profile-title` (в т.ч. `base64:`), `profile-update-interval`, `support-url`, `announce`;
   автообновление; обновление через туннель, если панель заблокирована.
@@ -44,7 +48,7 @@ devel-su rpm -U sailvless-<версия>.aarch64.rpm
 ```
 QML/Silica UI ──session D-Bus──► sailvlessd (systemd --user, от пользователя)
                                    ├ профили, подписки, HWID, маршрутизация, гео-базы
-                                   ├ режим прокси: сам запускает xray / sing-box
+                                   ├ режим прокси: сам запускает xray / sing-box (+ sailvless-awg для AmneziaWG)
                                    └──system D-Bus──► sailvless-tun-helper (root, запускается по требованию)
                                                        ├ ядро — от имени пользователя, только CAP_NET_ADMIN
                                                        └ sing-box TUN (свой конфиг, от root)
@@ -85,6 +89,9 @@ Root-хелпер получает команды только от `defaultuser
 - **Нет системного значка VPN** в строке состояния: туннель не зарегистрирован в connman (в планах — свой
   VPN-плагин connman, как у harbour-xhvpn).
 - **Не включайте одновременно другой VPN** (например, harbour-xhvpn).
+- **AmneziaWG:** проверены импорт, запуск и цепочка в обоих режимах; рукопожатие с настоящим сервером
+  ещё не проверялось. Из ссылок `vpn://` берётся только AmneziaWG (OpenVPN/Cloak/XRay-контейнеры Amnezia
+  не поддерживаются). Пинг для AWG не показывается (UDP); о живости говорит проверка через туннель.
 - **Waydroid:** правила туннеля охватывают и пересылаемый трафик контейнеров, но форвардинг не включается
   и не проверялся.
 
@@ -115,5 +122,6 @@ curl -x "$(sailvlessd ctl proxy-url)" https://ifconfig.me
 
 ## Лицензии
 
-В пакет входят Xray-core (MPL-2.0) и sing-box (GPL-3.0-or-later). Лицензию для собственного кода проекта
+В пакет входят Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later) и, в составе `sailvless-awg`,
+amneziawg-go (MIT) с gVisor (Apache-2.0). Лицензию для собственного кода проекта
 владелец ещё не выбрал.

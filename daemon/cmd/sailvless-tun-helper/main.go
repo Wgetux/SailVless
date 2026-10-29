@@ -42,7 +42,8 @@ type helper struct {
 	core     *core.Runner
 	coreSpec core.Spec
 	tunR     *core.Runner
-	owner    string // unique bus name of the caller that started the tunnel
+	side     *core.Runner // AmneziaWG sidecar, if any
+	owner    string       // unique bus name of the caller that started the tunnel
 	lastUsed time.Time
 }
 
@@ -141,10 +142,15 @@ func (h *helper) emit() {
 // status combines both processes: connected only when both are up.
 func (h *helper) status() status {
 	h.mu.Lock()
-	c, t := h.core, h.tunR
+	c, t, sd := h.core, h.tunR, h.side
 	h.mu.Unlock()
 	if c == nil || t == nil {
 		return status{State: "stopped"}
+	}
+	if sd != nil {
+		if ss, serr, _ := sd.Status(); ss == core.Failed {
+			return status{State: "error", Error: "amneziawg: " + serr}
+		}
 	}
 	cs, cerr, since := c.Status()
 	ts, terr, _ := t.Status()
@@ -273,11 +279,37 @@ func (h *helper) Start(paramsJSON string, sender dbus.Sender) *dbus.Error {
 	coreR, tunR := core.NewRunner(h.logs), core.NewRunner(h.logs)
 	coreR.OnChange = func(core.State, string) { h.emit() }
 	tunR.OnChange = func(core.State, string) { h.emit() }
+	var sideR *core.Runner
+	var sideSpec core.Spec
+	if p.Sidecar != "" {
+		// AmneziaWG sidecar: same user and capability as the core (its UDP needs SO_MARK)
+		var st struct {
+			Listen string `json:"listen"`
+		}
+		_ = json.Unmarshal([]byte(p.Sidecar), &st)
+		sidePath := filepath.Join(userDir, "awg.json")
+		if err := os.WriteFile(sidePath, []byte(p.Sidecar), 0o600); err != nil {
+			return dbusErr(err)
+		}
+		if err := os.Chown(sidePath, int(uid), int(gid)); err != nil {
+			return dbusErr(err)
+		}
+		sideSpec = core.Spec{Name: "awg", Bin: filepath.Join(coreDir, "sailvless-awg"), Env: env, Attr: userAttr,
+			RunArgs: []string{"-c", sidePath}, ReadyAddr: st.Listen}
+		sideR = core.NewRunner(h.logs)
+		sideR.OnChange = func(core.State, string) { h.emit() }
+	}
 	h.mu.Lock()
-	h.core, h.coreSpec, h.tunR, h.owner = coreR, coreSpec, tunR, string(sender)
+	h.core, h.coreSpec, h.tunR, h.side, h.owner = coreR, coreSpec, tunR, sideR, string(sender)
 	h.mu.Unlock()
 
 	h.logs.Add("helper: ", fmt.Sprintf("starting %s as uid %d and the TUN front-end", p.Core, uid))
+	if sideR != nil {
+		if err := sideR.Start(sideSpec); err != nil {
+			h.stop()
+			return dbusErr(err)
+		}
+	}
 	if err := coreR.Start(coreSpec); err != nil {
 		h.stop()
 		return dbusErr(err)
@@ -291,8 +323,8 @@ func (h *helper) Start(paramsJSON string, sender dbus.Sender) *dbus.Error {
 
 func (h *helper) stop() {
 	h.mu.Lock()
-	c, t := h.core, h.tunR
-	h.core, h.tunR, h.owner = nil, nil, ""
+	c, t, sd := h.core, h.tunR, h.side
+	h.core, h.tunR, h.side, h.owner = nil, nil, nil, ""
 	h.lastUsed = time.Now()
 	h.mu.Unlock()
 	if t == nil && c == nil {
@@ -303,6 +335,9 @@ func (h *helper) stop() {
 	}
 	if c != nil {
 		c.Stop()
+	}
+	if sd != nil {
+		sd.Stop()
 	}
 	tun.Cleanup()
 	_ = os.RemoveAll(filepath.Join(tun.RuntimeDir, "core"))

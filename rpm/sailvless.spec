@@ -1,6 +1,6 @@
 Name:       sailvless
 Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC proxy client
-Version:    0.8.1
+Version:    0.9.0
 Release:    1
 # own code + bundled cores: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later)
 License:    MPL-2.0 AND GPL-3.0-or-later
@@ -42,6 +42,7 @@ cd ..
 install -D -m 755 bin/sailvlessd %{buildroot}%{_bindir}/sailvlessd
 install -D -m 755 bin/xray %{buildroot}%{_libexecdir}/sailvless/xray
 install -D -m 755 bin/sing-box %{buildroot}%{_libexecdir}/sailvless/sing-box
+install -D -m 755 bin/sailvless-awg %{buildroot}%{_libexecdir}/sailvless/sailvless-awg
 install -D -m 644 systemd/sailvlessd.service %{buildroot}%{userunitdir}/sailvlessd.service
 mkdir -p %{buildroot}%{userunitdir}/user-session.target.wants
 ln -s ../sailvlessd.service %{buildroot}%{userunitdir}/user-session.target.wants/sailvlessd.service

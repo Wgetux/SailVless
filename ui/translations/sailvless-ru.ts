@@ -66,8 +66,8 @@
         <translation>Импорт</translation>
     </message>
     <message>
-        <source>One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://. A full Xray or sing-box JSON config is also accepted.</source>
-        <translation>По одной ссылке в строке: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://. Также можно вставить полный JSON-конфиг Xray или sing-box.</translation>
+        <source>One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, AmneziaWG only). Also accepted: a full Xray or sing-box JSON config, or an AmneziaWG/WireGuard .conf (paste the whole text).</source>
+        <translation>По одной ссылке в строке: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, только AmneziaWG). Также можно вставить полный JSON-конфиг Xray или sing-box либо конфиг AmneziaWG/WireGuard (.conf) целиком.</translation>
     </message>
     <message>
         <source>Paste links here</source>

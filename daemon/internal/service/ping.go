@@ -19,7 +19,7 @@ const (
 func endpoint(p *link.Profile) (string, bool) {
 	addr, port := p.Address, p.Port
 	switch p.Protocol {
-	case "hysteria2", "tuic":
+	case "hysteria2", "tuic", "amneziawg":
 		return "", false
 	case "xray-json":
 		addr, port = xrayJSONEndpoint(p.Raw)

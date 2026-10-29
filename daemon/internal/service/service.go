@@ -16,6 +16,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 
+	"sailvless/internal/awg"
 	"sailvless/internal/config/singbox"
 	"sailvless/internal/config/xray"
 	"sailvless/internal/core"
@@ -30,9 +31,10 @@ type Service struct {
 	Store      *store.Store
 	Logs       *core.LogBuf
 	Runner     *core.Runner
-	CoreDir    string // directory with xray / sing-box binaries
-	RuntimeDir string // tmpfs dir for generated configs (0700)
-	GeoDir     string // writable dir with geoip.dat / geosite.dat
+	Sidecar    *core.Runner // sailvless-awg for AmneziaWG profiles (proxy mode)
+	CoreDir    string       // directory with xray / sing-box binaries
+	RuntimeDir string       // tmpfs dir for generated configs (0700)
+	GeoDir     string       // writable dir with geoip.dat / geosite.dat
 
 	// OnState is called on every connection state change.
 	OnState func(Status)
@@ -85,7 +87,7 @@ type Probe struct {
 
 func New(st *store.Store, coreDir, runtimeDir string) *Service {
 	logs := core.NewLogBuf(1000)
-	s := &Service{Store: st, Logs: logs, Runner: core.NewRunner(logs), CoreDir: coreDir, RuntimeDir: runtimeDir}
+	s := &Service{Store: st, Logs: logs, Runner: core.NewRunner(logs), Sidecar: core.NewRunner(logs), CoreDir: coreDir, RuntimeDir: runtimeDir}
 	s.Runner.OnChange = func(core.State, string) {
 		if s.OnState != nil {
 			s.OnState(s.Status())
@@ -99,7 +101,14 @@ func New(st *store.Store, coreDir, runtimeDir string) *Service {
 func (s *Service) Import(text string) ([]string, []string, error) {
 	var ps []*link.Profile
 	var errs []error
-	if t := strings.TrimSpace(text); strings.HasPrefix(t, "{") || strings.HasPrefix(t, "[") {
+	if t := strings.TrimSpace(text); awg.LooksLikeConf(t) {
+		p, err := link.ParseAWG(t)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			ps = append(ps, p)
+		}
+	} else if strings.HasPrefix(t, "{") || strings.HasPrefix(t, "[") {
 		var err error
 		if ps, _, err = sub.ParseJSON([]byte(t), false); err != nil {
 			errs = append(errs, err)
@@ -213,11 +222,19 @@ func (s *Service) Connect(id string) error {
 	coreName := p.Core()
 	var cfg []byte
 	var warnings []string
+	var sidecar []byte // sailvless-awg settings for AmneziaWG profiles
 	switch {
 	case coreName == "sing-box":
 		cfg, warnings, err = singbox.Build(&p, opts)
 	case p.Protocol == "xray-json":
 		cfg, err = xray.BuildRaw(p.Raw, opts)
+	case p.Protocol == "amneziawg":
+		// Xray chains to the AmneziaWG sidecar's local SOCKS5
+		var chained link.Profile
+		chained, sidecar, err = s.awgSidecar(&p, set)
+		if err == nil {
+			cfg, err = xray.Build(&chained, opts)
+		}
 	default:
 		cfg, err = xray.Build(&p, opts)
 	}
@@ -244,10 +261,14 @@ func (s *Service) Connect(id string) error {
 	if set.TunMode {
 		// the root helper runs the core (with CAP_NET_ADMIN for SO_MARK) and the tunnel
 		s.Runner.Stop()
+		s.Sidecar.Stop()
 		s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via %s in TUN mode", p.Name, coreName))
-		return s.startTun(&p, coreName, cfg, set, user, pass)
+		return s.startTun(&p, coreName, cfg, set, user, pass, sidecar)
 	}
 	s.stopTun()
+	if err := s.startSidecar(sidecar); err != nil {
+		return err
+	}
 
 	path := filepath.Join(s.RuntimeDir, coreName+".json")
 	if err := os.WriteFile(path, cfg, 0o600); err != nil {
@@ -295,7 +316,7 @@ func (s *Service) UpdateGeo() error {
 }
 
 func (s *Service) removeConfigs() {
-	for _, c := range []string{"xray", "sing-box"} {
+	for _, c := range []string{"xray", "sing-box", "awg"} {
 		_ = os.Remove(filepath.Join(s.RuntimeDir, c+".json"))
 	}
 }
@@ -326,6 +347,7 @@ func (s *Service) Shutdown() {
 	s.opMu.Lock()
 	defer s.opMu.Unlock()
 	s.Runner.Stop()
+	s.Sidecar.Stop()
 	s.stopTun()
 	s.mu.Lock()
 	s.activeID, s.stats = "", nil
@@ -371,6 +393,8 @@ func (s *Service) Status() Status {
 		if ts.Since > 0 {
 			since = time.Unix(ts.Since, 0)
 		}
+	} else if ss, serr, _ := s.Sidecar.Status(); ss == core.Failed && st != core.Stopped {
+		st, msg = core.Failed, "amneziawg: "+serr
 	}
 	if id == "" {
 		set = s.Store.Settings()

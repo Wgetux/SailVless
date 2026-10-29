@@ -40,7 +40,7 @@ Dialog {
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.secondaryHighlightColor
-                text: qsTr("One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://. A full Xray or sing-box JSON config is also accepted.")
+                text: qsTr("One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, AmneziaWG only). Also accepted: a full Xray or sing-box JSON config, or an AmneziaWG/WireGuard .conf (paste the whole text).")
             }
 
             TextArea {

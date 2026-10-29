@@ -13,7 +13,7 @@ import (
 type Profile struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
-	Protocol string `json:"protocol"` // vless, vmess, trojan, shadowsocks, hysteria2, tuic, xray-json, singbox-json
+	Protocol string `json:"protocol"` // vless, vmess, trojan, shadowsocks, hysteria2, tuic, amneziawg, xray-json, singbox-json
 	Address  string `json:"address"`
 	Port     int    `json:"port"`
 	SubID    string `json:"subId,omitempty"`
@@ -99,6 +99,8 @@ func Parse(s string) (*Profile, error) {
 		return parseHysteria2(s)
 	case "tuic":
 		return parseTUIC(s)
+	case "vpn":
+		return parseAmneziaVPN(s)
 	default:
 		return nil, fmt.Errorf("unsupported scheme %q", scheme)
 	}

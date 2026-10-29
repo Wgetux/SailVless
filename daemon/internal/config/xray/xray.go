@@ -187,6 +187,10 @@ func outbound(p *link.Profile) (obj, error) {
 		s["password"] = p.Password
 	case "shadowsocks":
 		s["method"], s["password"] = p.Encryption, p.Password
+	case "socks": // local chained proxy, e.g. sailvless-awg
+		if p.UUID != "" {
+			s["user"], s["pass"] = p.UUID, p.Password
+		}
 	default:
 		return nil, fmt.Errorf("xray: unsupported protocol %q", p.Protocol)
 	}
