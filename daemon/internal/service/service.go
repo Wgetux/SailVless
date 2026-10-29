@@ -157,8 +157,8 @@ func (s *Service) Connect(id string) error {
 	if !ok {
 		return errors.New("no such profile")
 	}
-	if set.SelectedID != id {
-		set.SelectedID = id
+	if set.SelectedID != id || !set.Connected {
+		set.SelectedID, set.Connected = id, true
 		if err := s.Store.SetSettings(set); err != nil {
 			return err
 		}
@@ -269,7 +269,18 @@ func loopbackFor(listen string) string {
 	return listen
 }
 
+// Disconnect is the user's "off": the tunnel stays down across daemon restarts.
 func (s *Service) Disconnect() {
+	set := s.Store.Settings()
+	if set.Connected {
+		set.Connected = false
+		_ = s.Store.SetSettings(set)
+	}
+	s.Shutdown()
+}
+
+// Shutdown stops the core but keeps the user's intent (daemon exit, upgrade).
+func (s *Service) Shutdown() {
 	s.Runner.Stop()
 	s.mu.Lock()
 	s.activeID, s.stats = "", nil

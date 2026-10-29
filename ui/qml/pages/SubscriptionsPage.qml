@@ -37,7 +37,10 @@ Page {
             MenuItem {
                 text: qsTr("Update all")
                 visible: list.count > 0
-                onClicked: for (var i = 0; i < app.subscriptions.length; i++) page.update(app.subscriptions[i].id)
+                onClicked: {
+                    for (var i = 0; i < app.subscriptions.length; i++)
+                        page.update(app.subscriptions[i].id)
+                }
             }
             MenuItem {
                 text: qsTr("Add subscription")
@@ -76,7 +79,7 @@ Page {
                     width: parent.width
                     truncationMode: TruncationMode.Fade
                     color: item.highlighted ? Theme.highlightColor : Theme.primaryColor
-                    text: modelData.name
+                    text: Util.name(modelData.name)
                 }
                 Label {
                     width: parent.width

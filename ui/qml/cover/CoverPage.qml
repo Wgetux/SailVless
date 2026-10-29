@@ -54,7 +54,7 @@ CoverBackground {
             truncationMode: TruncationMode.Fade
             font.pixelSize: Theme.fontSizeExtraSmall
             color: Theme.secondaryColor
-            text: app.status.profileName || (app.selected ? app.selected.name : "")
+            text: Util.name(app.status.profileName || (app.selected ? app.selected.name : ""))
         }
     }
 

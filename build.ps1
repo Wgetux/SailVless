@@ -66,8 +66,13 @@ if ($Rpm) {
 
     Push-Location $shadow
     try {
-        sfdk -c "target=$Target" build
-        if ($LASTEXITCODE) { throw 'sfdk build failed' }
+        $log = sfdk -c "target=$Target" build 2>&1 | ForEach-Object { "$_" }
+        $code = $LASTEXITCODE
+        $log | Select-Object -Last 5 | ForEach-Object { Write-Host $_ }
+        if ($code) { $log | Select-Object -Last 40 | ForEach-Object { Write-Host $_ }; throw 'sfdk build failed' }
+        # lupdate parses every QML file during the build: treat its syntax errors as fatal
+        $qmlErrors = $log | Where-Object { $_ -match '\.(qml|js):\d+:\d+: error' }
+        if ($qmlErrors) { $qmlErrors | ForEach-Object { Write-Host $_ }; throw 'QML syntax errors' }
     } finally { Pop-Location }
 
     $outRpm = Join-Path $root 'out\rpm'

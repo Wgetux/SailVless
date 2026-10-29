@@ -15,7 +15,7 @@ import (
 	"sailvless/internal/store"
 )
 
-var version = "0.2.0"
+var version = "0.4.1"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ctl" {
@@ -57,6 +57,15 @@ func run() error {
 	}
 	svc.Logs.Add("sailvlessd: ", fmt.Sprintf("%s started, cores in %s", version, svc.CoreDir))
 
+	if set := st.Settings(); set.Connected && set.SelectedID != "" {
+		svc.Logs.Add("sailvlessd: ", "restoring the connection")
+		go func() {
+			if err := svc.Connect(""); err != nil {
+				svc.Logs.Add("sailvlessd: ", "restore failed: "+err.Error())
+			}
+		}()
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	go svc.AutoUpdateLoop(ctx)
 
@@ -64,7 +73,7 @@ func run() error {
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	<-sig
 	cancel()
-	svc.Disconnect()
+	svc.Shutdown()
 	svc.Logs.Add("sailvlessd: ", "stopped")
 	return nil
 }

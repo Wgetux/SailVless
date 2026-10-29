@@ -133,7 +133,7 @@ Page {
                     width: parent.width
                     truncationMode: TruncationMode.Fade
                     color: item.highlighted ? Theme.highlightColor : Theme.primaryColor
-                    text: model.name
+                    text: Util.name(model.name)
                 }
                 Label {
                     width: parent.width

@@ -19,6 +19,7 @@ import (
 
 type Settings struct {
 	SelectedID  string `json:"selectedId"`
+	Connected   bool   `json:"connected"` // user wants the tunnel up; restored on daemon start
 	Listen      string `json:"listen"`
 	SocksPort   int    `json:"socksPort"`
 	HTTPPort    int    `json:"httpPort"`

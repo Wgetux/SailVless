@@ -1,5 +1,14 @@
 .pragma library
 
+// Sailfish fonts have no flag emoji: turn regional-indicator pairs (🇵🇱) into "PL"
+function name(s) {
+    if (!s)
+        return ""
+    return s.replace(/\uD83C([\uDDE6-\uDDFF])\uD83C([\uDDE6-\uDDFF])/g, function (m, a, b) {
+        return String.fromCharCode(a.charCodeAt(0) - 0xDDE6 + 65) + String.fromCharCode(b.charCodeAt(0) - 0xDDE6 + 65)
+    }).replace(/^([A-Z]{2})(?=\S)/, "$1 ")
+}
+
 function parse(json, fallback) {
     if (!json)
         return fallback

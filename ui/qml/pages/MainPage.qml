@@ -175,7 +175,7 @@ Page {
                         width: parent.width
                         truncationMode: TruncationMode.Fade
                         color: highlighted ? Theme.highlightColor : Theme.primaryColor
-                        text: app.selected ? app.selected.name : qsTr("No servers yet")
+                        text: app.selected ? Util.name(app.selected.name) : qsTr("No servers yet")
                     }
                     Label {
                         width: parent.width

@@ -27,7 +27,7 @@ Page {
             id: column
             width: parent.width
 
-            PageHeader { title: page.sub ? page.sub.name : "" }
+            PageHeader { title: page.sub ? Util.name(page.sub.name) : "" }
 
             TextField {
                 width: parent.width
