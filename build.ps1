@@ -44,6 +44,9 @@ foreach ($c in 'xray', 'sing-box') {
 }
 
 if ($Rpm) {
+    if (-not (Get-Command sfdk -ErrorAction SilentlyContinue) -and (Test-Path 'C:\SailfishOS\bin\sfdk.exe')) {
+        $env:Path += ';C:\SailfishOS\bin'
+    }
     if (-not (Get-Command sfdk -ErrorAction SilentlyContinue)) { throw 'sfdk not found. Install Sailfish SDK 3.13.5 (Docker build engine).' }
     $outRpm = Join-Path $root 'out\rpm'
     New-Item -ItemType Directory -Force $outRpm | Out-Null
