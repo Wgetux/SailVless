@@ -55,6 +55,7 @@ type Service struct {
 	tunLostAt time.Time
 	// last known addresses of proxy server names (see resolveServers)
 	serverHosts map[string][]string
+	probes      probeState
 }
 
 var errNoReachable = errors.New("no reachable server")
@@ -72,6 +73,14 @@ type Status struct {
 	Auth        bool       `json:"auth"`
 	Tun         bool       `json:"tun"`
 	Traffic     *Traffic   `json:"traffic,omitempty"`
+	Probe       *Probe     `json:"probe,omitempty"`
+}
+
+// Probe is the result of the last liveness check through the server.
+type Probe struct {
+	Ms      int   `json:"ms"`
+	Failing bool  `json:"failing"`
+	At      int64 `json:"at"`
 }
 
 func New(st *store.Store, coreDir, runtimeDir string) *Service {
@@ -343,6 +352,11 @@ func (s *Service) StatusWithTraffic() Status {
 		t := src.get()
 		out.Traffic = &t
 	}
+	s.probes.mu.Lock()
+	if !s.probes.at.IsZero() && out.State == core.Connected {
+		out.Probe = &Probe{Ms: s.probes.ms, Failing: s.probes.failing, At: s.probes.at.Unix()}
+	}
+	s.probes.mu.Unlock()
 	return out
 }
 

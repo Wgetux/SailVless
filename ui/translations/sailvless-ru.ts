@@ -164,6 +164,14 @@
         <translation>Отключено</translation>
     </message>
     <message>
+        <source>Server does not respond</source>
+        <translation>Сервер не отвечает</translation>
+    </message>
+    <message>
+        <source>Server responds in %1 ms</source>
+        <translation>Сервер отвечает за %1 мс</translation>
+    </message>
+    <message>
         <source>Server</source>
         <translation>Сервер</translation>
     </message>
@@ -478,6 +486,26 @@
     <message>
         <source>DNS for server addresses (direct)</source>
         <translation>DNS для адресов серверов (напрямую)</translation>
+    </message>
+    <message>
+        <source>Reliability</source>
+        <translation>Надёжность</translation>
+    </message>
+    <message>
+        <source>Check that the server responds</source>
+        <translation>Проверять, что сервер отвечает</translation>
+    </message>
+    <message>
+        <source>Every 2 minutes while the screen is on, a tiny request goes through the server. If it fails twice, the connection is restarted; if that does not help, you get a notification.</source>
+        <translation>Раз в 2 минуты, пока экран включён, через сервер отправляется крошечный запрос. Если он дважды не проходит, соединение перезапускается; если не помогло — придёт уведомление.</translation>
+    </message>
+    <message>
+        <source>Switch to another server automatically</source>
+        <translation>Переключаться на другой сервер автоматически</translation>
+    </message>
+    <message>
+        <source>When the server stays dead, connect to the fastest other server.</source>
+        <translation>Если сервер так и не ожил, подключиться к самому быстрому из остальных.</translation>
     </message>
     <message>
         <source>Local proxy</source>

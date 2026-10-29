@@ -26,6 +26,8 @@ var ruTexts = map[string]string{
 	"Remove an old device in your panel or bot, then update the subscription.": "Удалите старое устройство в панели или боте и обновите подписку.",
 	"SailVless: no connection":                                                 "SailVless: нет соединения",
 	"SailVless: connected again":                                               "SailVless: соединение восстановлено",
+	"SailVless: server not responding":                                         "SailVless: сервер не отвечает",
+	"Switched to ":                                                             "Переключено на ",
 }
 
 var russian = func() bool {
@@ -91,6 +93,7 @@ func (s *Service) notify(key, summary, body string) {
 	}
 	notifyState.last[key] = time.Now()
 	notifyState.Unlock()
+	s.Logs.Add("sailvlessd: ", "notification: "+summary)
 	s.Notify(summary, body)
 }
 

@@ -163,6 +163,16 @@ Page {
                 }
             }
 
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: app.connected && !!app.status.probe
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: app.status.probe && app.status.probe.failing ? Theme.errorColor : Theme.secondaryColor
+                text: !app.status.probe ? ""
+                    : app.status.probe.failing ? qsTr("Server does not respond")
+                    : qsTr("Server responds in %1 ms").arg(app.status.probe.ms)
+            }
+
             SectionHeader { text: qsTr("Server") }
 
             BackgroundItem {

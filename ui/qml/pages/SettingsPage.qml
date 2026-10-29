@@ -79,6 +79,24 @@ Page {
                 EnterKey.onClicked: { page.patch({ bootstrapDns: text.trim() }); focus = false }
             }
 
+            SectionHeader { text: qsTr("Reliability") }
+
+            TextSwitch {
+                text: qsTr("Check that the server responds")
+                description: qsTr("Every 2 minutes while the screen is on, a tiny request goes through the server. If it fails twice, the connection is restarted; if that does not help, you get a notification.")
+                checked: !!page.settings.healthCheck
+                automaticCheck: false
+                onClicked: page.patch({ healthCheck: !checked })
+            }
+            TextSwitch {
+                visible: !!page.settings.healthCheck
+                text: qsTr("Switch to another server automatically")
+                description: qsTr("When the server stays dead, connect to the fastest other server.")
+                checked: !!page.settings.healthAutoSwitch
+                automaticCheck: false
+                onClicked: page.patch({ healthAutoSwitch: !checked })
+            }
+
             SectionHeader { text: qsTr("Local proxy") }
 
             TextSwitch {

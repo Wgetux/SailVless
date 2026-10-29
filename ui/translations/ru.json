@@ -178,5 +178,12 @@
   "Off (recommended): apps use IPv4 only. On: IPv6 sites go through the server too (the server must support IPv6). IPv6 never bypasses the tunnel.": "Выключено (рекомендуется): приложения используют только IPv4. Включено: IPv6-сайты тоже идут через сервер (сервер должен поддерживать IPv6). Мимо туннеля IPv6 не уходит в любом случае.",
   "Geo databases": "Гео-базы",
   "not downloaded yet": "ещё не скачаны",
-  "geoip/geosite from %1, checked with SHA-256. Downloaded when routing first needs them and refreshed weekly; a running connection picks them up on the next connect.": "geoip/geosite из %1, с проверкой SHA-256. Скачиваются, когда впервые понадобятся маршрутизации, и обновляются раз в неделю; текущее подключение подхватит их при следующем подключении."
+  "geoip/geosite from %1, checked with SHA-256. Downloaded when routing first needs them and refreshed weekly; a running connection picks them up on the next connect.": "geoip/geosite из %1, с проверкой SHA-256. Скачиваются, когда впервые понадобятся маршрутизации, и обновляются раз в неделю; текущее подключение подхватит их при следующем подключении.",
+  "Server does not respond": "Сервер не отвечает",
+  "Server responds in %1 ms": "Сервер отвечает за %1 мс",
+  "Reliability": "Надёжность",
+  "Check that the server responds": "Проверять, что сервер отвечает",
+  "Every 2 minutes while the screen is on, a tiny request goes through the server. If it fails twice, the connection is restarted; if that does not help, you get a notification.": "Раз в 2 минуты, пока экран включён, через сервер отправляется крошечный запрос. Если он дважды не проходит, соединение перезапускается; если не помогло — придёт уведомление.",
+  "Switch to another server automatically": "Переключаться на другой сервер автоматически",
+  "When the server stays dead, connect to the fastest other server.": "Если сервер так и не ожил, подключиться к самому быстрому из остальных."
 }

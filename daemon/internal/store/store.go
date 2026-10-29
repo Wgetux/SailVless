@@ -34,6 +34,9 @@ type Settings struct {
 	BootstrapDNS string `json:"bootstrapDns"`
 	RemoteDNS    string `json:"remoteDns"`
 
+	HealthCheck      bool `json:"healthCheck"`      // probe through the server every 2 min (screen on)
+	HealthAutoSwitch bool `json:"healthAutoSwitch"` // switch to the fastest other server when it stays dead
+
 	Routing       routing.Config `json:"routing"`
 	RouteImported bool           `json:"routeImported"` // apply Routing to imported full configs too
 
@@ -102,7 +105,7 @@ func Open(dir string) (*Store, error) {
 		subs:     map[string]*Subscription{},
 		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning",
 			UserAgent: DefaultUserAgent, HWIDEnabled: true,
-			BootstrapDNS: "1.1.1.1", RemoteDNS: "1.1.1.1", Routing: routing.Default()},
+			BootstrapDNS: "1.1.1.1", HealthCheck: true, RemoteDNS: "1.1.1.1", Routing: routing.Default()},
 	}
 	var list []*link.Profile
 	var subs []*Subscription
