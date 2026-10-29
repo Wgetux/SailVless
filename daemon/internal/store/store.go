@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"sailvless/internal/link"
+	"sailvless/internal/sub"
 )
 
 type Settings struct {
@@ -23,16 +24,38 @@ type Settings struct {
 	HTTPPort    int    `json:"httpPort"`
 	AuthEnabled bool   `json:"authEnabled"`
 	LogLevel    string `json:"logLevel"`
+
+	UserAgent   string `json:"userAgent"`
+	HWIDEnabled bool   `json:"hwidEnabled"`
+	HWIDManual  string `json:"hwidManual"` // overrides the computed HWID when set
+}
+
+const DefaultUserAgent = "SailVless/0.2"
+
+// Subscription is stored without its URL (that lives in secrets.json).
+type Subscription struct {
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	AutoUpdate    bool     `json:"autoUpdate"`
+	ViaProxy      bool     `json:"viaProxy"`      // fetch through the running tunnel first
+	IntervalHours int      `json:"intervalHours"` // 0 = panel's profile-update-interval, else 24
+	Meta          sub.Meta `json:"meta"`
+	LastUpdate    int64    `json:"lastUpdate"`
+	LastError     string   `json:"lastError,omitempty"`
+	Count         int      `json:"count"`
 }
 
 type profileSecret struct {
 	UUID     string `json:"uuid,omitempty"`
 	Password string `json:"password,omitempty"`
+	Raw      string `json:"raw,omitempty"`
 }
 
 type secrets struct {
 	ProxyUser string                   `json:"proxyUser"`
 	ProxyPass string                   `json:"proxyPass"`
+	HWIDSalt  string                   `json:"hwidSalt"`
+	SubURLs   map[string]string        `json:"subscriptions"`
 	Profiles  map[string]profileSecret `json:"profiles"`
 }
 
@@ -40,6 +63,7 @@ type Store struct {
 	dir      string
 	mu       sync.Mutex
 	profiles map[string]*link.Profile
+	subs     map[string]*Subscription
 	settings Settings
 	secrets  secrets
 }
@@ -63,11 +87,13 @@ func Open(dir string) (*Store, error) {
 	s := &Store{
 		dir:      dir,
 		profiles: map[string]*link.Profile{},
-		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning"},
-		secrets:  secrets{Profiles: map[string]profileSecret{}},
+		subs:     map[string]*Subscription{},
+		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning",
+			UserAgent: DefaultUserAgent, HWIDEnabled: true},
 	}
 	var list []*link.Profile
-	for name, v := range map[string]any{"profiles.json": &list, "settings.json": &s.settings, "secrets.json": &s.secrets} {
+	var subs []*Subscription
+	for name, v := range map[string]any{"profiles.json": &list, "subscriptions.json": &subs, "settings.json": &s.settings, "secrets.json": &s.secrets} {
 		if err := s.readJSON(name, v); err != nil {
 			return nil, err
 		}
@@ -75,14 +101,28 @@ func Open(dir string) (*Store, error) {
 	if s.secrets.Profiles == nil {
 		s.secrets.Profiles = map[string]profileSecret{}
 	}
+	if s.secrets.SubURLs == nil {
+		s.secrets.SubURLs = map[string]string{}
+	}
 	for _, p := range list {
 		sec := s.secrets.Profiles[p.ID]
-		p.UUID, p.Password = sec.UUID, sec.Password
+		p.UUID, p.Password, p.Raw = sec.UUID, sec.Password, sec.Raw
 		s.profiles[p.ID] = p
 	}
+	for _, sb := range subs {
+		s.subs[sb.ID] = sb
+	}
+	dirty := false
 	if s.secrets.ProxyUser == "" {
 		s.secrets.ProxyUser = "sv-" + RandomToken(4)
 		s.secrets.ProxyPass = RandomToken(18)
+		dirty = true
+	}
+	if s.secrets.HWIDSalt == "" {
+		s.secrets.HWIDSalt = RandomToken(16)
+		dirty = true
+	}
+	if dirty {
 		if err := s.saveLocked(); err != nil {
 			return nil, err
 		}
@@ -140,10 +180,10 @@ func (s *Store) saveLocked() error {
 	s.secrets.Profiles = map[string]profileSecret{}
 	for _, p := range s.sortedLocked() {
 		c := *p
-		if c.UUID != "" || c.Password != "" {
-			s.secrets.Profiles[c.ID] = profileSecret{UUID: c.UUID, Password: c.Password}
+		if c.UUID != "" || c.Password != "" || c.Raw != "" {
+			s.secrets.Profiles[c.ID] = profileSecret{UUID: c.UUID, Password: c.Password, Raw: c.Raw}
 		}
-		c.UUID, c.Password = "", ""
+		c.UUID, c.Password, c.Raw = "", "", ""
 		list = append(list, &c)
 	}
 	if err := s.writeJSON("secrets.json", s.secrets); err != nil {
@@ -152,7 +192,107 @@ func (s *Store) saveLocked() error {
 	if err := s.writeJSON("profiles.json", list); err != nil {
 		return err
 	}
+	if err := s.writeJSON("subscriptions.json", s.subsLocked()); err != nil {
+		return err
+	}
 	return s.writeJSON("settings.json", s.settings)
+}
+
+func (s *Store) subsLocked() []*Subscription {
+	list := make([]*Subscription, 0, len(s.subs))
+	for _, sb := range s.subs {
+		list = append(list, sb)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].ID < list[j].ID })
+	return list
+}
+
+// Subscriptions returns copies (without URLs).
+func (s *Store) Subscriptions() []Subscription {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []Subscription
+	for _, sb := range s.subsLocked() {
+		out = append(out, *sb)
+	}
+	return out
+}
+
+func (s *Store) Subscription(id string) (Subscription, string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sb, ok := s.subs[id]
+	if !ok {
+		return Subscription{}, "", false
+	}
+	return *sb, s.secrets.SubURLs[id], true
+}
+
+// SaveSubscription adds or updates a subscription; url == "" keeps the stored one.
+func (s *Store) SaveSubscription(sb Subscription, url string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c := sb
+	s.subs[sb.ID] = &c
+	if url != "" {
+		s.secrets.SubURLs[sb.ID] = url
+	}
+	return s.saveLocked()
+}
+
+// DeleteSubscription removes the subscription and its profiles.
+func (s *Store) DeleteSubscription(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.subs, id)
+	delete(s.secrets.SubURLs, id)
+	for pid, p := range s.profiles {
+		if p.SubID == id {
+			delete(s.profiles, pid)
+		}
+	}
+	if _, ok := s.profiles[s.settings.SelectedID]; !ok {
+		s.settings.SelectedID = ""
+	}
+	return s.saveLocked()
+}
+
+// ReplaceSubProfiles swaps all profiles of a subscription for ps.
+// The selection survives when the selected server is still present.
+func (s *Store) ReplaceSubProfiles(subID string, ps []*link.Profile) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for pid, p := range s.profiles {
+		if p.SubID == subID {
+			delete(s.profiles, pid)
+		}
+	}
+	for _, p := range ps {
+		c := *p
+		c.SubID = subID
+		s.profiles[c.ID] = &c
+	}
+	if _, ok := s.profiles[s.settings.SelectedID]; !ok {
+		s.settings.SelectedID = ""
+		if len(ps) > 0 {
+			s.settings.SelectedID = ps[0].ID
+		}
+	}
+	return s.saveLocked()
+}
+
+func (s *Store) HWIDSalt() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.secrets.HWIDSalt
+}
+
+// ResetHWIDSalt makes the computed HWID change (the panel will see a new device).
+func (s *Store) ResetHWIDSalt() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.secrets.HWIDSalt = RandomToken(16)
+	return s.saveLocked()
 }
 
 func (s *Store) sortedLocked() []*link.Profile {

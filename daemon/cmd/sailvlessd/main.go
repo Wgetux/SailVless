@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -14,7 +15,7 @@ import (
 	"sailvless/internal/store"
 )
 
-var version = "0.1.0"
+var version = "0.2.0"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ctl" {
@@ -44,6 +45,7 @@ func run() error {
 		return err
 	}
 	svc := service.New(st, coreDir(), rt)
+	svc.GeoDir = filepath.Join(store.DefaultDir(), "geo")
 
 	conn, err := dbusapi.SessionBus()
 	if err != nil {
@@ -55,9 +57,13 @@ func run() error {
 	}
 	svc.Logs.Add("sailvlessd: ", fmt.Sprintf("%s started, cores in %s", version, svc.CoreDir))
 
+	ctx, cancel := context.WithCancel(context.Background())
+	go svc.AutoUpdateLoop(ctx)
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 	<-sig
+	cancel()
 	svc.Disconnect()
 	svc.Logs.Add("sailvlessd: ", "stopped")
 	return nil

@@ -2,4 +2,4 @@
 # Format: name|repo|tag|commit|go-build-tags
 # commit: expected commit of the tag; empty = recorded by build-cores.ps1 on first build, verified afterwards.
 xray|https://github.com/XTLS/Xray-core.git|v26.10.21|1b1647cd9ddf0abc34b981d4611fc03bcac1ca74|
-sing-box|https://github.com/SagerNet/sing-box.git|v1.14.4||with_quic,with_utls,with_gvisor,with_v2ray_api,with_clash_api
+sing-box|https://github.com/SagerNet/sing-box.git|v1.14.4|c005f35300ce76427dc285481ec5695f5b179cd2|with_quic,with_utls,with_gvisor,with_v2ray_api,with_clash_api

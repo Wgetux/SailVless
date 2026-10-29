@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/godbus/dbus/v5"
 
@@ -27,6 +28,14 @@ const ctlUsage = `usage: sailvlessd ctl <command>
   regen-creds            new random login/password for local proxy
   random-ports           pick random free local ports
   proxy-url [socks|http] print local proxy URL with credentials
+  sub-add [name]         add subscription; URL is read from stdin (never from argv)
+  sub-list
+  sub-update <id>
+  sub-set <id> <json>    e.g. '{"autoUpdate":false,"intervalHours":12}'
+  sub-delete <id>
+  hwid                   show HWID and device headers
+  hwid-reset             new random salt -> new HWID
+  geo-update             download geoip.dat/geosite.dat (sha256-verified)
   logs [n]`
 
 func ctl(args []string) int {
@@ -81,7 +90,7 @@ func ctl(args []string) int {
 				if p.Selected {
 					mark = "*"
 				}
-				fmt.Printf("%s %s  %-8s %-6s %-8s %s\n", mark, p.ID, p.Protocol, p.Transport.Type, p.Security.Type, p.Name)
+				fmt.Printf("%s %s  %-12s %-11s %-8s %-8s %s\n", mark, p.ID, p.Protocol, p.Transport.Type, p.Security.Type, p.Core(), p.Name)
 			}
 		}
 	case "connect":
@@ -113,6 +122,32 @@ func ctl(args []string) int {
 		err2 = call("RandomizePorts", nil)
 	case "proxy-url":
 		err2 = proxyURL(call, arg(1))
+	case "sub-add":
+		b, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return fail(err)
+		}
+		if err2 = call("AddSubscription", []any{&s}, strings.TrimSpace(string(b)), arg(1)); err2 == nil {
+			printJSON(s)
+		}
+	case "sub-list":
+		if err2 = call("ListSubscriptions", []any{&s}); err2 == nil {
+			printJSON(s)
+		}
+	case "sub-update":
+		err2 = call("UpdateSubscription", nil, arg(1))
+	case "sub-set":
+		err2 = call("SetSubscription", nil, arg(1), arg(2))
+	case "sub-delete":
+		err2 = call("DeleteSubscription", nil, arg(1))
+	case "hwid":
+		if err2 = call("GetHWID", []any{&s}); err2 == nil {
+			printJSON(s)
+		}
+	case "hwid-reset":
+		err2 = call("ResetHWID", nil)
+	case "geo-update":
+		err2 = call("UpdateGeo", nil)
 	case "logs":
 		n, _ := strconv.Atoi(arg(1))
 		if n == 0 {

@@ -45,7 +45,13 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
     $env:GOOS = 'linux'; $env:GOARCH = 'arm64'; $env:CGO_ENABLED = '0'
     $env:GOFLAGS = '-mod=readonly'
     $out = Join-Path $binDir $name
-    $goArgs = @('build', '-trimpath', '-ldflags', '-s -w -buildid=', '-o', $out)
+    $ldflags = '-s -w -buildid='
+    if ($name -eq 'sing-box') {
+        # same flags as upstream Makefile: version stamp + release/LDFLAGS
+        $ldflags = "-X 'github.com/sagernet/sing-box/constant.Version=$($tag.TrimStart('v'))' " +
+            (Get-Content (Join-Path $dir 'release\LDFLAGS') -Raw).Trim() + " $ldflags"
+    }
+    $goArgs = @('build', '-trimpath', '-ldflags', $ldflags, '-o', $out)
     if ($tags) { $goArgs += @('-tags', $tags) }
     $goArgs += $mainPkg[$name]
     Push-Location $dir

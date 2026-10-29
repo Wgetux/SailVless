@@ -76,15 +76,45 @@ func outbound(p *link.Profile) (obj, error) {
 	if err != nil {
 		return nil, err
 	}
+	s := obj{"address": p.Address, "port": p.Port}
 	switch p.Protocol {
 	case "vless":
-		s := obj{"address": p.Address, "port": p.Port, "id": p.UUID, "encryption": p.Encryption}
+		s["id"], s["encryption"] = p.UUID, p.Encryption
 		if p.Flow != "" {
 			s["flow"] = p.Flow
 		}
-		return obj{"tag": "proxy", "protocol": "vless", "settings": s, "streamSettings": stream}, nil
+	case "vmess":
+		s["id"], s["security"] = p.UUID, p.Encryption
+	case "trojan":
+		s["password"] = p.Password
+	case "shadowsocks":
+		s["method"], s["password"] = p.Encryption, p.Password
+	default:
+		return nil, fmt.Errorf("xray: unsupported protocol %q", p.Protocol)
 	}
-	return nil, fmt.Errorf("xray: unsupported protocol %q", p.Protocol)
+	return obj{"tag": "proxy", "protocol": p.Protocol, "settings": s, "streamSettings": stream}, nil
+}
+
+// BuildRaw takes a user-supplied full Xray config and replaces its inbounds
+// with ours, so local listener/auth settings always apply.
+func BuildRaw(raw string, o Options) ([]byte, error) {
+	var cfg map[string]any
+	if err := json.Unmarshal([]byte(raw), &cfg); err != nil {
+		return nil, fmt.Errorf("xray json: %w", err)
+	}
+	cfg["inbounds"] = inbounds(o.Inbounds)
+	logCfg, _ := cfg["log"].(map[string]any)
+	if logCfg == nil {
+		logCfg = obj{}
+	}
+	if o.LogLevel != "" {
+		logCfg["loglevel"] = o.LogLevel
+	}
+	// never write files to paths from foreign configs; errors go to stdout
+	logCfg["access"] = "none"
+	delete(logCfg, "error")
+	cfg["log"] = logCfg
+	return json.MarshalIndent(cfg, "", "  ")
 }
 
 func streamSettings(p *link.Profile) (obj, error) {

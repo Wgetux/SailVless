@@ -96,6 +96,66 @@ func (a *api) RandomizePorts() *dbus.Error {
 	return dbusErr(a.svc.SetSettings(set))
 }
 
+func (a *api) AddSubscription(url, name string) (string, *dbus.Error) {
+	id, err := a.svc.AddSubscription(url, name)
+	if id == "" {
+		return "", dbusErr(err)
+	}
+	// the subscription is saved even if the first fetch failed; report both
+	res := map[string]any{"id": id}
+	if err != nil {
+		res["error"] = err.Error()
+	}
+	return toJSON(res), nil
+}
+
+func (a *api) UpdateSubscription(id string) *dbus.Error { return dbusErr(a.svc.UpdateSubscription(id)) }
+
+func (a *api) ListSubscriptions() (string, *dbus.Error) { return toJSON(a.svc.Subscriptions()), nil }
+
+func (a *api) DeleteSubscription(id string) *dbus.Error {
+	return dbusErr(a.svc.Store.DeleteSubscription(id))
+}
+
+// SetSubscription merges {"name","autoUpdate","viaProxy","intervalHours"} into a subscription.
+func (a *api) SetSubscription(id, patch string) *dbus.Error {
+	sb, _, ok := a.svc.Store.Subscription(id)
+	if !ok {
+		return dbusErr(fmt.Errorf("no such subscription"))
+	}
+	var p struct {
+		Name          *string `json:"name"`
+		AutoUpdate    *bool   `json:"autoUpdate"`
+		ViaProxy      *bool   `json:"viaProxy"`
+		IntervalHours *int    `json:"intervalHours"`
+	}
+	if err := json.Unmarshal([]byte(patch), &p); err != nil {
+		return dbusErr(err)
+	}
+	if p.ViaProxy != nil {
+		sb.ViaProxy = *p.ViaProxy
+	}
+	if p.Name != nil {
+		sb.Name = *p.Name
+	}
+	if p.AutoUpdate != nil {
+		sb.AutoUpdate = *p.AutoUpdate
+	}
+	if p.IntervalHours != nil {
+		if *p.IntervalHours < 0 || *p.IntervalHours > 24*30 {
+			return dbusErr(fmt.Errorf("interval must be 0-720 hours"))
+		}
+		sb.IntervalHours = *p.IntervalHours
+	}
+	return dbusErr(a.svc.Store.SaveSubscription(sb, ""))
+}
+
+func (a *api) UpdateGeo() *dbus.Error { return dbusErr(a.svc.UpdateGeo()) }
+
+func (a *api) GetHWID() (string, *dbus.Error) { return toJSON(a.svc.HWID()), nil }
+
+func (a *api) ResetHWID() *dbus.Error { return dbusErr(a.svc.ResetHWID()) }
+
 func (a *api) Logs(n int32) (string, *dbus.Error) {
 	return strings.Join(a.svc.Logs.Tail(int(n)), "\n"), nil
 }
@@ -112,6 +172,14 @@ const introXML = `<interface name="` + Interface + `">
   <method name="GetProxyCredentials"><arg direction="out" type="s" name="user"/><arg direction="out" type="s" name="password"/></method>
   <method name="RegenerateCredentials"/>
   <method name="RandomizePorts"/>
+  <method name="AddSubscription"><arg direction="in" type="s" name="url"/><arg direction="in" type="s" name="name"/><arg direction="out" type="s" name="resultJson"/></method>
+  <method name="UpdateSubscription"><arg direction="in" type="s" name="id"/></method>
+  <method name="ListSubscriptions"><arg direction="out" type="s" name="subscriptionsJson"/></method>
+  <method name="DeleteSubscription"><arg direction="in" type="s" name="id"/></method>
+  <method name="SetSubscription"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="patchJson"/></method>
+  <method name="UpdateGeo"/>
+  <method name="GetHWID"><arg direction="out" type="s" name="hwidJson"/></method>
+  <method name="ResetHWID"/>
   <method name="Logs"><arg direction="in" type="i" name="lines"/><arg direction="out" type="s" name="text"/></method>
   <signal name="StateChanged"><arg type="s" name="statusJson"/></signal>
 </interface>`

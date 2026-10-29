@@ -2,19 +2,25 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"sailvless/internal/config/singbox"
 	"sailvless/internal/config/xray"
 	"sailvless/internal/core"
+	"sailvless/internal/geo"
 	"sailvless/internal/link"
 	"sailvless/internal/store"
+	"sailvless/internal/sub"
 )
 
 type Service struct {
@@ -23,6 +29,7 @@ type Service struct {
 	Runner     *core.Runner
 	CoreDir    string // directory with xray / sing-box binaries
 	RuntimeDir string // tmpfs dir for generated configs (0700)
+	GeoDir     string // writable dir with geoip.dat / geosite.dat
 
 	// OnState is called on every connection state change.
 	OnState func(Status)
@@ -55,9 +62,19 @@ func New(st *store.Store, coreDir, runtimeDir string) *Service {
 	return s
 }
 
-// Import parses links and stores them; returns imported IDs and per-line errors.
+// Import parses links (or a full Xray / sing-box JSON config) and stores them;
+// returns imported IDs and per-line errors.
 func (s *Service) Import(text string) ([]string, []string, error) {
-	ps, errs := link.ParseMany(text)
+	var ps []*link.Profile
+	var errs []error
+	if t := strings.TrimSpace(text); strings.HasPrefix(t, "{") || strings.HasPrefix(t, "[") {
+		var err error
+		if ps, _, err = sub.ParseJSON([]byte(t), false); err != nil {
+			errs = append(errs, err)
+		}
+	} else {
+		ps, errs = link.ParseMany(text)
+	}
 	var msgs []string
 	for _, e := range errs {
 		msgs = append(msgs, e.Error())
@@ -89,7 +106,7 @@ func (s *Service) Profiles() []ProfileView {
 	sel := s.Store.Settings().SelectedID
 	var out []ProfileView
 	for _, p := range s.Store.Profiles() {
-		p.UUID, p.Password = "", ""
+		p.UUID, p.Password, p.Raw, p.ObfsPassword = "", "", "", ""
 		out = append(out, ProfileView{Profile: p, Selected: p.ID == sel})
 	}
 	return out
@@ -125,30 +142,89 @@ func (s *Service) Connect(id string) error {
 	if set.AuthEnabled {
 		user, pass = s.Store.ProxyCredentials()
 	}
-	cfg, err := xray.Build(&p, xray.Options{
+	opts := xray.Options{
 		Inbounds: xray.Inbounds{Listen: set.Listen, SocksPort: set.SocksPort, HTTPPort: set.HTTPPort, User: user, Pass: pass},
 		LogLevel: set.LogLevel,
-	})
+	}
+	coreName := p.Core()
+	var cfg []byte
+	var warnings []string
+	var err error
+	switch {
+	case coreName == "sing-box":
+		cfg, warnings, err = singbox.Build(&p, opts)
+	case p.Protocol == "xray-json":
+		cfg, err = xray.BuildRaw(p.Raw, opts)
+	default:
+		cfg, err = xray.Build(&p, opts)
+	}
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(s.RuntimeDir, "xray.json")
+	for _, w := range warnings {
+		s.Logs.Add("sailvlessd: ", "warning: "+w)
+	}
+	if coreName == "xray" && geo.NeedsGeo(cfg) {
+		if missing := geo.Missing(s.GeoDir); len(missing) > 0 {
+			s.Logs.Add("sailvlessd: ", fmt.Sprintf("config uses geo rules, downloading %v", missing))
+			if err := s.UpdateGeo(); err != nil {
+				return fmt.Errorf("config needs geo data and download failed: %w", err)
+			}
+		}
+	}
+	s.removeConfigs()
+	path := filepath.Join(s.RuntimeDir, coreName+".json")
 	if err := os.WriteFile(path, cfg, 0o600); err != nil {
 		return err
 	}
 	s.mu.Lock()
 	s.activeID, s.activeCfg = id, set
 	s.mu.Unlock()
-	s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via xray", p.Name))
-	bin := filepath.Join(s.CoreDir, "xray")
-	return s.Runner.Start(core.Spec{
-		Name:      "xray",
-		Bin:       bin,
-		TestArgs:  []string{"run", "-test", "-c", path},
-		RunArgs:   []string{"run", "-c", path},
-		Env:       append(os.Environ(), "XRAY_LOCATION_ASSET="+s.CoreDir),
+	s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via %s", p.Name, coreName))
+	spec := core.Spec{
+		Name:      coreName,
+		Bin:       filepath.Join(s.CoreDir, coreName),
+		Env:       os.Environ(),
 		ReadyAddr: net.JoinHostPort(loopbackFor(set.Listen), strconv.Itoa(set.SocksPort)),
-	})
+	}
+	if coreName == "sing-box" {
+		spec.TestArgs = []string{"check", "-c", path}
+		spec.RunArgs = []string{"run", "-c", path, "-D", s.RuntimeDir}
+	} else {
+		spec.TestArgs = []string{"run", "-test", "-c", path}
+		spec.RunArgs = []string{"run", "-c", path}
+		spec.Env = append(spec.Env, "XRAY_LOCATION_ASSET="+s.GeoDir)
+	}
+	return s.Runner.Start(spec)
+}
+
+// UpdateGeo downloads geo databases: through the tunnel when it is up, else directly.
+func (s *Service) UpdateGeo() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	var client *http.Client
+	if c := s.proxyClient(); c != nil {
+		c.Timeout = 5 * time.Minute
+		client = c
+	}
+	start := time.Now()
+	err := geo.Update(ctx, client, geo.Loyalsoldier, s.GeoDir)
+	if err != nil && client != nil {
+		s.Logs.Add("sailvlessd: ", fmt.Sprintf("geo update via proxy failed (%v), trying direct", err))
+		err = geo.Update(ctx, nil, geo.Loyalsoldier, s.GeoDir)
+	}
+	if err != nil {
+		s.Logs.Add("sailvlessd: ", "geo update failed: "+err.Error())
+		return err
+	}
+	s.Logs.Add("sailvlessd: ", fmt.Sprintf("geo data updated from %s in %s (sha256 verified)", geo.Loyalsoldier.Name, time.Since(start).Round(time.Second)))
+	return nil
+}
+
+func (s *Service) removeConfigs() {
+	for _, c := range []string{"xray", "sing-box"} {
+		_ = os.Remove(filepath.Join(s.RuntimeDir, c+".json"))
+	}
 }
 
 // loopbackFor returns an address to probe a listener bound to listen.
@@ -167,7 +243,7 @@ func (s *Service) Disconnect() {
 	s.mu.Lock()
 	s.activeID = ""
 	s.mu.Unlock()
-	_ = os.Remove(filepath.Join(s.RuntimeDir, "xray.json"))
+	s.removeConfigs()
 }
 
 func (s *Service) Status() Status {
@@ -230,6 +306,12 @@ func validate(v store.Settings) error {
 	case "debug", "info", "warning", "error", "none":
 	default:
 		return fmt.Errorf("bad log level %q", v.LogLevel)
+	}
+	if strings.TrimSpace(v.UserAgent) == "" {
+		return fmt.Errorf("user agent must not be empty")
+	}
+	if v.HWIDManual != "" && !sub.HWIDPattern.MatchString(v.HWIDManual) {
+		return fmt.Errorf("HWID must be 10-64 chars of A-Z a-z 0-9 = - (panel requirement)")
 	}
 	return nil
 }

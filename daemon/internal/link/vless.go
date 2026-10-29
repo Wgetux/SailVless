@@ -48,7 +48,7 @@ func parseVLESS(s string) (*Profile, error) {
 	if p.Name == "" {
 		p.Name = fmt.Sprintf("%s:%d", p.Address, p.Port)
 	}
-	p.ID = stableID(p.Protocol, p.Address, strconv.Itoa(p.Port), p.UUID, p.Transport.Type, p.Transport.Path)
+	p.ID = StableID(p.Protocol, p.Address, strconv.Itoa(p.Port), p.UUID, p.Transport.Type, p.Transport.Path)
 	return p, nil
 }
 

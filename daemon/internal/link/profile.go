@@ -13,19 +13,39 @@ import (
 type Profile struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
-	Protocol string `json:"protocol"` // vless
+	Protocol string `json:"protocol"` // vless, vmess, trojan, shadowsocks, hysteria2, tuic, xray-json, singbox-json
 	Address  string `json:"address"`
 	Port     int    `json:"port"`
 	SubID    string `json:"subId,omitempty"`
 
+	// secrets: kept out of profiles.json by the store
 	UUID     string `json:"uuid,omitempty"`
 	Password string `json:"password,omitempty"`
+	Raw      string `json:"raw,omitempty"` // full core config for *-json profiles
 
 	Flow       string `json:"flow,omitempty"`
-	Encryption string `json:"encryption,omitempty"`
+	Encryption string `json:"encryption,omitempty"` // vless encryption / vmess or ss cipher
+
+	// hysteria2 / tuic
+	Ports        string `json:"ports,omitempty"` // port hopping, e.g. "20000-30000,443"
+	Obfs         string `json:"obfs,omitempty"`  // salamander
+	ObfsPassword string `json:"obfsPassword,omitempty"`
+	UpMbps       int    `json:"upMbps,omitempty"`
+	DownMbps     int    `json:"downMbps,omitempty"`
+	Congestion   string `json:"congestion,omitempty"`   // tuic
+	UDPRelayMode string `json:"udpRelayMode,omitempty"` // tuic
 
 	Transport Transport `json:"transport"`
 	Security  Security  `json:"security"`
+}
+
+// Core returns which core runs this profile.
+func (p *Profile) Core() string {
+	switch p.Protocol {
+	case "hysteria2", "tuic", "singbox-json":
+		return "sing-box"
+	}
+	return "xray"
 }
 
 type Transport struct {
@@ -49,11 +69,12 @@ type Security struct {
 	ShortID       string   `json:"sid,omitempty"`
 	SpiderX       string   `json:"spx,omitempty"`
 	Mldsa65Verify string   `json:"pqv,omitempty"`
+	PinSHA256     string   `json:"pinSHA256,omitempty"` // hysteria2 cert pin
 }
 
-// stableID derives a profile ID from its identity so re-importing the same
+// StableID derives a profile ID from its identity so re-importing the same
 // link updates the existing profile instead of duplicating it.
-func stableID(parts ...string) string {
+func StableID(parts ...string) string {
 	h := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(h[:6])
 }
@@ -68,6 +89,16 @@ func Parse(s string) (*Profile, error) {
 	switch strings.ToLower(scheme) {
 	case "vless":
 		return parseVLESS(s)
+	case "vmess":
+		return parseVMess(s)
+	case "trojan":
+		return parseTrojan(s)
+	case "ss":
+		return parseSS(s)
+	case "hysteria2", "hy2":
+		return parseHysteria2(s)
+	case "tuic":
+		return parseTUIC(s)
 	default:
 		return nil, fmt.Errorf("unsupported scheme %q", scheme)
 	}
