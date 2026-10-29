@@ -13,6 +13,7 @@ import (
 	"sailvless/internal/config/singbox"
 	"sailvless/internal/config/xray"
 	"sailvless/internal/link"
+	"sailvless/internal/routing"
 )
 
 var samples = map[string]string{
@@ -33,7 +34,16 @@ func TestDumpConfigs(t *testing.T) {
 	// vmess built from JSON, see link tests; add one here too
 	samples["vmess-ws-tls"] = "vmess://eyJhZGQiOiJleGFtcGxlLmNvbSIsInBvcnQiOiI0NDMiLCJpZCI6IjExMTExMTExLTIyMjItMzMzMy00NDQ0LTU1NTU1NTU1NTU1NSIsIm5ldCI6IndzIiwicGF0aCI6Ii93cyIsInRscyI6InRscyIsInNuaSI6ImV4YW1wbGUuY29tIn0"
 	dir := os.Getenv("SAILVLESS_DUMP")
-	opts := xray.Options{Inbounds: xray.Inbounds{SocksPort: 10808, HTTPPort: 10809, User: "u", Pass: "p"}, APIListen: "127.0.0.1:10900", APISecret: "s"}
+	rc := routing.Default()
+	rc.Mode, rc.BlockAds, rc.DNSDirect = routing.Bypass, true, "77.88.8.8"
+	rc.Rules = []routing.Rule{
+		{Kind: "suffix", Value: "example.org", Action: "direct"},
+		{Kind: "domain", Value: "ads.example.com", Action: "block"},
+		{Kind: "keyword", Value: "tracker", Action: "block"},
+		{Kind: "ip", Value: "203.0.113.0/24", Action: "proxy"},
+		{Kind: "geosite", Value: "telegram", Action: "proxy"},
+	}
+	opts := xray.Options{Inbounds: xray.Inbounds{SocksPort: 10808, HTTPPort: 10809, User: "u", Pass: "p"}, APIListen: "127.0.0.1:10900", APISecret: "s", Routing: &rc}
 	for name, s := range samples {
 		p, err := link.Parse(s)
 		if err != nil {

@@ -44,9 +44,12 @@ type Params struct {
 
 	// proxy server host names: resolved outside the tunnel to avoid a loop
 	ServerDomains []string `json:"serverDomains"`
-	BootstrapDNS  string   `json:"bootstrapDns"` // plain DNS (marked, direct) for ServerDomains
-	RemoteDNS     string   `json:"remoteDns"`    // DNS over TCP through the proxy for everything else
-	IPv6          bool     `json:"ipv6"`         // proxy IPv6 traffic; false = reject it inside the tunnel
+	// ServerHosts are those names resolved by the daemon before the tunnel
+	// came up (system DNS, works even with operator whitelists)
+	ServerHosts  map[string][]string `json:"serverHosts"`
+	BootstrapDNS string              `json:"bootstrapDns"` // plain DNS (marked, direct) for ServerDomains
+	RemoteDNS    string              `json:"remoteDns"`    // DNS over TCP through the proxy for everything else
+	IPv6         bool                `json:"ipv6"`         // proxy IPv6 traffic; false = reject it inside the tunnel
 }
 
 func (p *Params) Validate() error {
@@ -72,6 +75,13 @@ func (p *Params) Validate() error {
 			return fmt.Errorf("bad server domain %q", d)
 		}
 	}
+	for d, ips := range p.ServerHosts {
+		for _, ip := range ips {
+			if net.ParseIP(ip) == nil {
+				return fmt.Errorf("bad address %q for %q", ip, d)
+			}
+		}
+	}
 	return nil
 }
 
@@ -81,6 +91,16 @@ var privateRanges = []string{
 }
 
 type obj = map[string]any
+
+// dnsStrategy: without IPv6 support apps get no AAAA answers. Otherwise they
+// would "connect" over IPv6 (the TUN stack completes the handshake itself)
+// and never fall back to IPv4 when the real IPv6 path fails.
+func dnsStrategy(ipv6 bool) string {
+	if ipv6 {
+		return "prefer_ipv4"
+	}
+	return "ipv4_only"
+}
 
 // SingBoxConfig builds the TUN front-end: every packet from the device goes
 // to the core's SOCKS inbound; DNS is answered through the proxy; LAN stays direct.
@@ -95,9 +115,30 @@ func SingBoxConfig(p Params) ([]byte, error) {
 	// IPv6 is always captured (otherwise it would leak around the tunnel);
 	// without IPv6 support it is rejected so apps fall back to IPv4
 	addrs := []string{Interface4, Interface6}
+	dnsServers := []any{
+		obj{"type": "tcp", "tag": "remote", "server": remote, "detour": "proxy"},
+		obj{"type": "udp", "tag": "bootstrap", "server": boot, "routing_mark": Mark},
+	}
 	dnsRules := []any{}
-	if len(p.ServerDomains) > 0 {
-		dnsRules = append(dnsRules, obj{"domain": p.ServerDomains, "server": "bootstrap"})
+	var unresolved []string
+	predefined := obj{}
+	for _, d := range p.ServerDomains {
+		if ips := p.ServerHosts[d]; len(ips) > 0 {
+			predefined[d] = ips
+		} else {
+			unresolved = append(unresolved, d)
+		}
+	}
+	if len(predefined) > 0 {
+		dnsServers = append(dnsServers, obj{"type": "hosts", "tag": "servers", "predefined": predefined})
+		names := make([]string, 0, len(predefined))
+		for d := range predefined {
+			names = append(names, d)
+		}
+		dnsRules = append(dnsRules, obj{"domain": names, "server": "servers"})
+	}
+	if len(unresolved) > 0 {
+		dnsRules = append(dnsRules, obj{"domain": unresolved, "server": "bootstrap"})
 	}
 	socks := obj{"type": "socks", "tag": "proxy", "server": "127.0.0.1", "server_port": p.SocksPort, "version": "5"}
 	if p.User != "" {
@@ -114,12 +155,10 @@ func SingBoxConfig(p Params) ([]byte, error) {
 	cfg := obj{
 		"log": obj{"level": "warn", "timestamp": true},
 		"dns": obj{
-			"servers": []any{
-				obj{"type": "tcp", "tag": "remote", "server": remote, "detour": "proxy"},
-				obj{"type": "udp", "tag": "bootstrap", "server": boot, "routing_mark": Mark},
-			},
-			"rules": dnsRules,
-			"final": "remote",
+			"servers":  dnsServers,
+			"rules":    dnsRules,
+			"strategy": dnsStrategy(p.IPv6),
+			"final":    "remote",
 		},
 		"inbounds": []any{obj{
 			"type": "tun", "tag": "tun-in", "interface_name": IfName,

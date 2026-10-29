@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"sailvless/internal/link"
+	"sailvless/internal/routing"
 )
 
 // Inbounds describes the local proxy listeners.
@@ -27,6 +28,46 @@ type Options struct {
 	// Mark (SO_MARK) is set on every outbound socket in TUN mode so the
 	// core's own traffic bypasses the tunnel. 0 = off.
 	Mark int
+	// Routing (nil = everything through the proxy, as before).
+	Routing *routing.Config
+	// RouteImported applies Routing to imported full configs too
+	// (by default the panel's own routing is kept).
+	RouteImported bool
+}
+
+// retagProxy makes an imported config fit our routing: the first proxy
+// outbound is tagged "proxy" and "direct"/"block" outbounds exist.
+func retagProxy(cfg map[string]any) {
+	outs, _ := cfg["outbounds"].([]any)
+	have := map[string]bool{}
+	for _, o := range outs {
+		if ob, ok := o.(map[string]any); ok {
+			tag, _ := ob["tag"].(string)
+			have[tag] = true
+		}
+	}
+	if !have["proxy"] {
+	tagFirst:
+		for _, o := range outs {
+			ob, ok := o.(map[string]any)
+			if !ok {
+				continue
+			}
+			switch ob["protocol"] {
+			case "freedom", "blackhole", "dns", "loopback":
+				continue
+			}
+			ob["tag"] = "proxy"
+			break tagFirst
+		}
+	}
+	if !have["direct"] {
+		outs = append(outs, obj{"tag": "direct", "protocol": "freedom"})
+	}
+	if !have["block"] {
+		outs = append(outs, obj{"tag": "block", "protocol": "blackhole"})
+	}
+	cfg["outbounds"] = outs
 }
 
 // addMark sets sockopt.mark on all outbounds (including foreign configs).
@@ -93,6 +134,9 @@ func Build(p *link.Profile, o Options) ([]byte, error) {
 	}
 	addStats(cfg, o.APIListen)
 	addMark(cfg, o.Mark)
+	if o.Routing != nil {
+		addRouting(cfg, *o.Routing)
+	}
 	return json.MarshalIndent(cfg, "", "  ")
 }
 
@@ -170,6 +214,10 @@ func BuildRaw(raw string, o Options) ([]byte, error) {
 	cfg["log"] = logCfg
 	addStats(cfg, o.APIListen)
 	addMark(cfg, o.Mark)
+	if o.Routing != nil && o.RouteImported {
+		retagProxy(cfg)
+		addRouting(cfg, *o.Routing)
+	}
 	return json.MarshalIndent(cfg, "", "  ")
 }
 

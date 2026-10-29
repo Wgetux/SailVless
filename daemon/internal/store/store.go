@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"sailvless/internal/link"
+	"sailvless/internal/routing"
 	"sailvless/internal/sub"
 )
 
@@ -26,10 +27,15 @@ type Settings struct {
 	AuthEnabled bool   `json:"authEnabled"`
 	LogLevel    string `json:"logLevel"`
 
-	TunMode      bool   `json:"tunMode"` // route all device traffic through the root TUN helper
-	TunIPv6      bool   `json:"tunIpv6"` // proxy IPv6 inside the tunnel (else reject it)
+	TunMode bool `json:"tunMode"` // route all device traffic through the root TUN helper
+	// proxy IPv6 inside the tunnel (else reject it and hand out IPv4 only);
+	// the key was renamed from "tunIpv6" when the default became off
+	TunIPv6      bool   `json:"tunIpv6Proxy"`
 	BootstrapDNS string `json:"bootstrapDns"`
 	RemoteDNS    string `json:"remoteDns"`
+
+	Routing       routing.Config `json:"routing"`
+	RouteImported bool           `json:"routeImported"` // apply Routing to imported full configs too
 
 	UserAgent   string `json:"userAgent"`
 	HWIDEnabled bool   `json:"hwidEnabled"`
@@ -96,7 +102,7 @@ func Open(dir string) (*Store, error) {
 		subs:     map[string]*Subscription{},
 		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning",
 			UserAgent: DefaultUserAgent, HWIDEnabled: true,
-			TunIPv6: true, BootstrapDNS: "1.1.1.1", RemoteDNS: "1.1.1.1"},
+			BootstrapDNS: "1.1.1.1", RemoteDNS: "1.1.1.1", Routing: routing.Default()},
 	}
 	var list []*link.Profile
 	var subs []*Subscription

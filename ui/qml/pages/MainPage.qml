@@ -26,6 +26,10 @@ Page {
                 onClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
             }
             MenuItem {
+                text: qsTr("Routing")
+                onClicked: pageStack.push(Qt.resolvedUrl("RoutingPage.qml"))
+            }
+            MenuItem {
                 text: qsTr("Logs")
                 onClicked: pageStack.push(Qt.resolvedUrl("LogsPage.qml"))
             }

@@ -51,6 +51,8 @@ type Service struct {
 	tunActive bool
 	tunState  tunStatus
 	tunLostAt time.Time
+	// last known addresses of proxy server names (see resolveServers)
+	serverHosts map[string][]string
 }
 
 var errNoReachable = errors.New("no reachable server")
@@ -195,6 +197,8 @@ func (s *Service) Connect(id string) error {
 	if set.TunMode {
 		opts.Mark = tun.Mark
 	}
+	rc := set.Routing
+	opts.Routing, opts.RouteImported = &rc, set.RouteImported
 	coreName := p.Core()
 	var cfg []byte
 	var warnings []string
@@ -413,6 +417,9 @@ func validate(v store.Settings) error {
 		if net.ParseIP(d) == nil {
 			return fmt.Errorf("DNS server must be an IP address: %q", d)
 		}
+	}
+	if err := v.Routing.Validate(); err != nil {
+		return err
 	}
 	if strings.TrimSpace(v.UserAgent) == "" {
 		return fmt.Errorf("user agent must not be empty")

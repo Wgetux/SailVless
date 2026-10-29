@@ -68,6 +68,7 @@ func Build(p *link.Profile, o Options) ([]byte, []string, error) {
 	default:
 		return nil, nil, fmt.Errorf("sing-box: unsupported protocol %q", p.Protocol)
 	}
+	// block rules use the "reject" action, no outbound needed
 	outbounds = append(outbounds, obj{"type": "direct", "tag": "direct"})
 	cfg := obj{
 		"log":       logCfg(o.LogLevel),
@@ -80,6 +81,9 @@ func Build(p *link.Profile, o Options) ([]byte, []string, error) {
 			"rules":                   []any{obj{"action": "sniff"}},
 		},
 		"experimental": experimental(o),
+	}
+	if o.Routing != nil {
+		applyRouting(cfg, *o.Routing)
 	}
 	if o.Mark != 0 {
 		cfg["route"].(obj)["default_mark"] = o.Mark

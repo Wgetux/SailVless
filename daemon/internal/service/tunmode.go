@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/godbus/dbus/v5"
@@ -98,10 +100,12 @@ func (s *Service) startTun(p *link.Profile, coreName string, cfg []byte, set sto
 	if err != nil {
 		return err
 	}
+	domains := serverDomains(p)
 	params := tun.Params{
 		Core: coreName, CoreConfig: string(cfg), AssetDir: s.GeoDir,
 		SocksPort: set.SocksPort, User: user, Pass: pass,
-		ServerDomains: serverDomains(p),
+		ServerDomains: domains,
+		ServerHosts:   s.resolveServers(domains),
 		BootstrapDNS:  set.BootstrapDNS, RemoteDNS: set.RemoteDNS,
 		IPv6: set.TunIPv6,
 	}
@@ -209,6 +213,46 @@ func (s *Service) LogsText(n int) string {
 		text += "\n--- TUN helper ---\n" + h
 	}
 	return text
+}
+
+// resolveServers looks up proxy server names with the system resolver (the
+// operator's DNS, reachable even under whitelists) and remembers the answers:
+// while the tunnel is up a lookup may fail, then the last answer is reused.
+func (s *Service) resolveServers(domains []string) map[string][]string {
+	out := map[string][]string{}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	for _, d := range domains {
+		wg.Add(1)
+		go func(d string) {
+			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			ips, err := net.DefaultResolver.LookupIPAddr(ctx, d)
+			mu.Lock()
+			defer mu.Unlock()
+			if err == nil && len(ips) > 0 {
+				for _, ip := range ips {
+					out[d] = append(out[d], ip.IP.String())
+				}
+			}
+		}(d)
+	}
+	wg.Wait()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.serverHosts == nil {
+		s.serverHosts = map[string][]string{}
+	}
+	for _, d := range domains {
+		if ips, ok := out[d]; ok {
+			s.serverHosts[d] = ips
+		} else if cached := s.serverHosts[d]; len(cached) > 0 {
+			out[d] = cached
+			s.Logs.Add("sailvlessd: ", fmt.Sprintf("could not resolve %s now, using the last known address", d))
+		}
+	}
+	return out
 }
 
 // serverDomains lists proxy server host names: they must be resolved outside

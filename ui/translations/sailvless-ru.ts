@@ -120,6 +120,10 @@
         <translation>Настройки</translation>
     </message>
     <message>
+        <source>Routing</source>
+        <translation>Маршрутизация</translation>
+    </message>
+    <message>
         <source>Logs</source>
         <translation>Логи</translation>
     </message>
@@ -201,6 +205,196 @@
     </message>
 </context>
 <context>
+    <name>RoutingPage</name>
+    <message>
+        <source>domain</source>
+        <translation>домен</translation>
+    </message>
+    <message>
+        <source>domain and subdomains</source>
+        <translation>домен и поддомены</translation>
+    </message>
+    <message>
+        <source>contains</source>
+        <translation>содержит</translation>
+    </message>
+    <message>
+        <source>proxy</source>
+        <translation>через прокси</translation>
+    </message>
+    <message>
+        <source>direct</source>
+        <translation>напрямую</translation>
+    </message>
+    <message>
+        <source>block</source>
+        <translation>блокировать</translation>
+    </message>
+    <message>
+        <source>Add rule</source>
+        <translation>Добавить правило</translation>
+    </message>
+    <message>
+        <source>Routing</source>
+        <translation>Маршрутизация</translation>
+    </message>
+    <message>
+        <source>Mode</source>
+        <translation>Режим</translation>
+    </message>
+    <message>
+        <source>Everything through the proxy</source>
+        <translation>Всё через прокси</translation>
+    </message>
+    <message>
+        <source>Bypass LAN and a country</source>
+        <translation>Обход локальной сети и страны</translation>
+    </message>
+    <message>
+        <source>Only my rules</source>
+        <translation>Только мои правила</translation>
+    </message>
+    <message>
+        <source>Country code (direct)</source>
+        <translation>Код страны (напрямую)</translation>
+    </message>
+    <message>
+        <source>Sites and IP addresses of this country go direct. For &quot;ru&quot;: Russian services, .ru/.su/.рф domains and Russian IP ranges.</source>
+        <translation>Сайты и IP-адреса этой страны идут напрямую. Для «ru»: российские сервисы, домены .ru/.su/.рф и российские IP-диапазоны.</translation>
+    </message>
+    <message>
+        <source>Everything else</source>
+        <translation>Всё остальное</translation>
+    </message>
+    <message>
+        <source>through the proxy</source>
+        <translation>через прокси</translation>
+    </message>
+    <message>
+        <source>Block ads</source>
+        <translation>Блокировать рекламу</translation>
+    </message>
+    <message>
+        <source>Ad and tracker domains from geosite:category-ads-all</source>
+        <translation>Домены рекламы и трекеров из geosite:category-ads-all</translation>
+    </message>
+    <message>
+        <source>Local network addresses always go direct.</source>
+        <translation>Адреса локальной сети всегда идут напрямую.</translation>
+    </message>
+    <message>
+        <source>My rules (checked first)</source>
+        <translation>Мои правила (проверяются первыми)</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation>Выше</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <source>No rules. Pull down to add one.</source>
+        <translation>Правил нет. Потяните вниз, чтобы добавить.</translation>
+    </message>
+    <message>
+        <source>DNS</source>
+        <translation>DNS</translation>
+    </message>
+    <message>
+        <source>DNS through the proxy</source>
+        <translation>DNS через прокси</translation>
+    </message>
+    <message>
+        <source>DNS for direct sites</source>
+        <translation>DNS для прямых сайтов</translation>
+    </message>
+    <message>
+        <source>Formats: https://1.1.1.1/dns-query (DoH), tcp://8.8.8.8, 8.8.8.8; for direct sites also localhost (system DNS) and https+local://… DNS-over-TLS is not supported by Xray, use DoH instead.</source>
+        <translation>Форматы: https://1.1.1.1/dns-query (DoH), tcp://8.8.8.8, 8.8.8.8; для прямых сайтов также localhost (системный DNS) и https+local://… DNS-over-TLS в Xray не поддерживается — используйте DoH.</translation>
+    </message>
+    <message>
+        <source>Imported configs</source>
+        <translation>Импортированные конфиги</translation>
+    </message>
+    <message>
+        <source>Apply these rules to imported configs</source>
+        <translation>Применять эти правила к импортированным конфигам</translation>
+    </message>
+    <message>
+        <source>Panels that send full Xray JSON (e.g. with the Happ User-Agent) include their own routing. Off: keep the panel&apos;s routing.</source>
+        <translation>Панели, которые отдают полный Xray JSON (например, с User-Agent Happ), присылают свою маршрутизацию. Выключено — используется маршрутизация панели.</translation>
+    </message>
+</context>
+<context>
+    <name>RuleDialog</name>
+    <message>
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
+    <message>
+        <source>Match</source>
+        <translation>Условие</translation>
+    </message>
+    <message>
+        <source>domain and subdomains</source>
+        <translation>домен и поддомены</translation>
+    </message>
+    <message>
+        <source>exact domain</source>
+        <translation>точный домен</translation>
+    </message>
+    <message>
+        <source>domain contains</source>
+        <translation>домен содержит</translation>
+    </message>
+    <message>
+        <source>IP or subnet</source>
+        <translation>IP или подсеть</translation>
+    </message>
+    <message>
+        <source>geosite category</source>
+        <translation>категория geosite</translation>
+    </message>
+    <message>
+        <source>geoip country/list</source>
+        <translation>geoip: страна/список</translation>
+    </message>
+    <message>
+        <source>e.g. 203.0.113.0/24</source>
+        <translation>например, 203.0.113.0/24</translation>
+    </message>
+    <message>
+        <source>e.g. telegram, category-ru, youtube</source>
+        <translation>например, telegram, category-ru, youtube</translation>
+    </message>
+    <message>
+        <source>e.g. ru, telegram</source>
+        <translation>например, ru, telegram</translation>
+    </message>
+    <message>
+        <source>e.g. example.com</source>
+        <translation>например, example.com</translation>
+    </message>
+    <message>
+        <source>Action</source>
+        <translation>Действие</translation>
+    </message>
+    <message>
+        <source>through the proxy</source>
+        <translation>через прокси</translation>
+    </message>
+    <message>
+        <source>direct</source>
+        <translation>напрямую</translation>
+    </message>
+    <message>
+        <source>block</source>
+        <translation>блокировать</translation>
+    </message>
+</context>
+<context>
     <name>ServersPage</name>
     <message>
         <source>Added manually</source>
@@ -274,8 +468,8 @@
         <translation>IPv6 через прокси</translation>
     </message>
     <message>
-        <source>Turn off if the server has no IPv6: apps will fall back to IPv4. IPv6 never bypasses the tunnel.</source>
-        <translation>Выключите, если у сервера нет IPv6: приложения перейдут на IPv4. Мимо туннеля IPv6 не уходит в любом случае.</translation>
+        <source>Off (recommended): apps use IPv4 only. On: IPv6 sites go through the server too (the server must support IPv6). IPv6 never bypasses the tunnel.</source>
+        <translation>Выключено (рекомендуется): приложения используют только IPv4. Включено: IPv6-сайты тоже идут через сервер (сервер должен поддерживать IPv6). Мимо туннеля IPv6 не уходит в любом случае.</translation>
     </message>
     <message>
         <source>DNS through the tunnel</source>

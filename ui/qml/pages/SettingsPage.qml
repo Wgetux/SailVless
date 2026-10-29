@@ -53,10 +53,10 @@ Page {
             TextSwitch {
                 visible: !!page.settings.tunMode
                 text: qsTr("Proxy IPv6")
-                description: qsTr("Turn off if the server has no IPv6: apps will fall back to IPv4. IPv6 never bypasses the tunnel.")
-                checked: !!page.settings.tunIpv6
+                description: qsTr("Off (recommended): apps use IPv4 only. On: IPv6 sites go through the server too (the server must support IPv6). IPv6 never bypasses the tunnel.")
+                checked: !!page.settings.tunIpv6Proxy
                 automaticCheck: false
-                onClicked: page.patch({ tunIpv6: !checked })
+                onClicked: page.patch({ tunIpv6Proxy: !checked })
             }
             TextField {
                 visible: !!page.settings.tunMode
