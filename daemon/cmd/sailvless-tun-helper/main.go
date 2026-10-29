@@ -356,7 +356,7 @@ func (h *helper) RestartCore() *dbus.Error {
 	if c == nil {
 		return dbusErr(errors.New("tunnel is not running"))
 	}
-	h.logs.Add("helper: ", "restarting the core (network changed)")
+	h.logs.Add("helper: ", "restarting the core on request (network change or failed liveness check)")
 	return dbusErr(c.Start(spec))
 }
 

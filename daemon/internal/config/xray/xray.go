@@ -33,6 +33,18 @@ type Options struct {
 	// RouteImported applies Routing to imported full configs too
 	// (by default the panel's own routing is kept).
 	RouteImported bool
+	// IPv4Only: the device has no usable IPv6 (default); Xray's own lookups
+	// and direct dials stay on IPv4, otherwise a direct connection picks an
+	// AAAA answer, fails and Xray does not fall back.
+	IPv4Only bool
+}
+
+func directOutbound(ipv4Only bool) obj {
+	ob := obj{"tag": "direct", "protocol": "freedom"}
+	if ipv4Only {
+		ob["settings"] = obj{"domainStrategy": "UseIPv4"}
+	}
+	return ob
 }
 
 // retagProxy makes an imported config fit our routing: the first proxy
@@ -62,7 +74,7 @@ func retagProxy(cfg map[string]any) {
 		}
 	}
 	if !have["direct"] {
-		outs = append(outs, obj{"tag": "direct", "protocol": "freedom"})
+		outs = append(outs, directOutbound(false))
 	}
 	if !have["block"] {
 		outs = append(outs, obj{"tag": "block", "protocol": "blackhole"})
@@ -130,12 +142,12 @@ func Build(p *link.Profile, o Options) ([]byte, error) {
 	cfg := obj{
 		"log":       obj{"loglevel": logLevel, "access": "none"},
 		"inbounds":  inbounds(o.Inbounds),
-		"outbounds": []any{out, obj{"tag": "direct", "protocol": "freedom"}, obj{"tag": "block", "protocol": "blackhole"}},
+		"outbounds": []any{out, directOutbound(o.IPv4Only), obj{"tag": "block", "protocol": "blackhole"}},
 	}
 	addStats(cfg, o.APIListen)
 	addMark(cfg, o.Mark)
 	if o.Routing != nil {
-		addRouting(cfg, *o.Routing)
+		addRouting(cfg, *o.Routing, o.IPv4Only)
 	}
 	return json.MarshalIndent(cfg, "", "  ")
 }
@@ -220,7 +232,7 @@ func BuildRaw(raw string, o Options) ([]byte, error) {
 	addMark(cfg, o.Mark)
 	if o.Routing != nil && o.RouteImported {
 		retagProxy(cfg)
-		addRouting(cfg, *o.Routing)
+		addRouting(cfg, *o.Routing, o.IPv4Only)
 	}
 	return json.MarshalIndent(cfg, "", "  ")
 }

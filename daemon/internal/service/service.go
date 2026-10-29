@@ -219,6 +219,7 @@ func (s *Service) Connect(id string) error {
 	}
 	rc := set.Routing
 	opts.Routing, opts.RouteImported = &rc, set.RouteImported
+	opts.IPv4Only = !set.TunIPv6 // same IPv6 choice as the tunnel
 	coreName := p.Core()
 	var cfg []byte
 	var warnings []string

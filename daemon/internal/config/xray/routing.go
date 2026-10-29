@@ -31,7 +31,7 @@ func ipMatcher(r routing.Rule) string {
 }
 
 // addRouting renders the rule list as Xray "routing" + "dns" sections.
-func addRouting(cfg map[string]any, rc routing.Config) {
+func addRouting(cfg map[string]any, rc routing.Config, ipv4Only bool) {
 	rules, final := rc.Effective()
 	var out []any
 	hasIP := false
@@ -51,7 +51,11 @@ func addRouting(cfg map[string]any, rc routing.Config) {
 		out = append(out, rule)
 	}
 	if final == "direct" {
-		out = append(out, obj{"type": "field", "network": "tcp,udp", "outboundTag": "direct"})
+		// Xray sends unmatched traffic to the first outbound. A catch-all
+		// "network: tcp,udp" rule would match domain requests before
+		// IPIfNonMatch resolves them, so IP rules (e.g. AntiZapret's
+		// 198.18.0.0/15 answers) would never apply.
+		makeDefault(cfg, "direct")
 	}
 	strategy := "AsIs"
 	if hasIP {
@@ -59,10 +63,22 @@ func addRouting(cfg map[string]any, rc routing.Config) {
 		strategy = "IPIfNonMatch"
 	}
 	cfg["routing"] = obj{"domainStrategy": strategy, "rules": out}
-	cfg["dns"] = dnsSection(rc, rules)
+	cfg["dns"] = dnsSection(rc, rules, ipv4Only)
 }
 
-func dnsSection(rc routing.Config, rules []routing.Rule) obj {
+// makeDefault moves the outbound with tag to the front (Xray's default route).
+func makeDefault(cfg map[string]any, tag string) {
+	outs, _ := cfg["outbounds"].([]any)
+	for i, o := range outs {
+		if ob, ok := o.(map[string]any); ok && ob["tag"] == tag {
+			reordered := append([]any{o}, append(append([]any{}, outs[:i]...), outs[i+1:]...)...)
+			cfg["outbounds"] = reordered
+			return
+		}
+	}
+}
+
+func dnsSection(rc routing.Config, rules []routing.Rule, ipv4Only bool) obj {
 	var servers []any
 	var direct []string
 	for _, r := range routing.DirectDomains(rules) {
@@ -78,5 +94,9 @@ func dnsSection(rc routing.Config, rules []routing.Rule) obj {
 		remote = "tcp://" + remote // plain IP: TCP works over any proxy, UDP may not
 	}
 	servers = append(servers, remote)
-	return obj{"servers": servers, "queryStrategy": "UseIP"}
+	strategy := "UseIP"
+	if ipv4Only {
+		strategy = "UseIPv4"
+	}
+	return obj{"servers": servers, "queryStrategy": strategy}
 }
