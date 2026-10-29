@@ -1,6 +1,6 @@
 Name:       sailvless
 Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC proxy client
-Version:    0.9.0
+Version:    0.9.1
 Release:    1
 # own code + bundled cores: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later)
 License:    MPL-2.0 AND GPL-3.0-or-later

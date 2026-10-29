@@ -19,6 +19,7 @@ import (
 
 const ctlUsage = `usage: sailvlessd ctl <command>
   import [link|-]        import share link(s); "-" or no arg reads stdin
+  import-file <path>...  import config files (AmneziaWG .conf, links, JSON)
   list                   list profiles
   connect [id]           connect (default: selected profile)
   disconnect
@@ -83,6 +84,11 @@ func ctl(args []string) int {
 		}
 		err2 = call("ImportLinks", []any{&s}, text)
 		printJSON(s)
+	case "import-file":
+		b, _ := json.Marshal(args[1:])
+		if err2 = call("ImportFiles", []any{&s}, string(b)); err2 == nil {
+			printJSON(s)
+		}
 	case "list":
 		if err2 = call("ListProfiles", []any{&s}); err2 == nil {
 			var ps []service.ProfileView

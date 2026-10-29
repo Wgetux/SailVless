@@ -360,6 +360,18 @@ func (s *Store) Upsert(ps []*link.Profile) error {
 	return s.saveLocked()
 }
 
+// Rename changes a profile's display name.
+func (s *Store) Rename(id, name string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p, ok := s.profiles[id]
+	if !ok {
+		return errors.New("no such profile")
+	}
+	p.Name = name
+	return s.saveLocked()
+}
+
 func (s *Store) Delete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

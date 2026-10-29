@@ -1,5 +1,6 @@
 import QtQuick 2.6
 import Sailfish.Silica 1.0
+import Sailfish.Pickers 1.0
 import "../js/util.js" as Util
 
 Dialog {
@@ -51,11 +52,46 @@ Dialog {
                 inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
             }
 
-            Button {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Paste from clipboard")
-                enabled: Clipboard.hasText
-                onClicked: text.text = Clipboard.text
+            ButtonLayout {
+                Button {
+                    text: qsTr("Paste from clipboard")
+                    enabled: Clipboard.hasText
+                    onClicked: text.text = Clipboard.text
+                }
+                Button {
+                    text: qsTr("Choose files")
+                    // after picking, return past this dialog straight to where import was opened
+                    onClicked: pageStack.push(filePicker, {
+                        acceptDestination: pageStack.previousPage(dialog),
+                        acceptDestinationAction: PageStackAction.Pop
+                    })
+                }
+            }
+        }
+    }
+
+    // files are read by the daemon itself (one call, several files at once)
+    Component {
+        id: filePicker
+        MultiFilePickerDialog {
+            title: qsTr("Config files")
+            nameFilters: ["*.conf", "*.txt", "*.json", "*.yaml"]
+            onAccepted: {
+                var paths = []
+                for (var i = 0; i < selectedContent.count; i++)
+                    paths.push(selectedContent.get(i).filePath)
+                daemon.call("ImportFiles", [JSON.stringify(paths)], function (err, result) {
+                    if (err) {
+                        app.notify(err)
+                        return
+                    }
+                    var r = Util.parse(result, {})
+                    var n = r.imported ? r.imported.length : 0
+                    var bad = r.errors ? r.errors.length : 0
+                    app.notify(bad > 0 ? qsTr("Imported: %1, failed: %2 (%3)").arg(n).arg(bad).arg(r.errors[0])
+                                       : qsTr("Imported: %1").arg(n))
+                    app.refreshProfiles()
+                })
             }
         }
     }
@@ -63,7 +99,7 @@ Dialog {
     Component.onCompleted: {
         // prefill only with something that looks like links or a config
         var c = Clipboard.hasText ? Clipboard.text.trim() : ""
-        if (c.indexOf("://") > 0 || c.charAt(0) === "{" || c.charAt(0) === "[")
+        if (c.indexOf("://") > 0 || c.charAt(0) === "{" || c.charAt(0) === "[" || c.indexOf("[Interface]") >= 0)
             text.text = c
     }
 }

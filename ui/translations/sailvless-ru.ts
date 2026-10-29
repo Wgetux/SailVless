@@ -81,6 +81,14 @@
         <source>Paste from clipboard</source>
         <translation>Вставить из буфера</translation>
     </message>
+    <message>
+        <source>Choose files</source>
+        <translation>Выбрать файлы</translation>
+    </message>
+    <message>
+        <source>Config files</source>
+        <translation>Файлы конфигурации</translation>
+    </message>
 </context>
 <context>
     <name>LogsPage</name>
@@ -407,6 +415,14 @@
     <message>
         <source>Added manually</source>
         <translation>Добавлены вручную</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Переименовать</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Название</translation>
     </message>
     <message>
         <source>Servers</source>

@@ -164,6 +164,27 @@ func (c *Config) validate() error {
 	return nil
 }
 
+// Split reports split tunnelling: the peers' AllowedIPs do not cover the
+// whole Internet, so only those networks go into the tunnel (as wg-quick
+// would route them) and everything else goes direct.
+func (c *Config) Split() (bool, []string) {
+	var nets []string
+	full4 := false
+	for _, p := range c.Peers {
+		for _, a := range p.AllowedIPs {
+			pfx, err := netip.ParsePrefix(a)
+			if err != nil {
+				continue
+			}
+			if pfx.Bits() == 0 && pfx.Addr().Is4() {
+				full4 = true
+			}
+			nets = append(nets, pfx.String())
+		}
+	}
+	return !full4, nets
+}
+
 // Endpoint returns host and port of the first peer (for display and DNS).
 func (c *Config) Endpoint() (string, int) {
 	h, p, _ := net.SplitHostPort(c.Peers[0].Endpoint)

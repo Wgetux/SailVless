@@ -62,6 +62,26 @@ Page {
 
     ListModel { id: model }
 
+    Component {
+        id: renameDialog
+        Dialog {
+            property alias name: nameField.text
+            canAccept: nameField.text.trim().length > 0
+            Column {
+                width: parent.width
+                DialogHeader { acceptText: qsTr("Rename") }
+                TextField {
+                    id: nameField
+                    width: parent.width
+                    focus: true
+                    label: qsTr("Name")
+                    EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                    EnterKey.onClicked: parent.parent.accept()
+                }
+            }
+        }
+    }
+
     SilicaListView {
         id: list
         anchors.fill: parent
@@ -113,6 +133,15 @@ Page {
                 MenuItem {
                     text: qsTr("Connect")
                     onClicked: page.connectTo(model.id)
+                }
+                MenuItem {
+                    text: qsTr("Rename")
+                    visible: model.subId === ""
+                    onClicked: {
+                        var id = model.id
+                        var d = pageStack.push(renameDialog, { name: model.name })
+                        d.accepted.connect(function () { app.run("RenameProfile", [id, d.name], app.refreshProfiles) })
+                    }
                 }
                 MenuItem {
                     text: qsTr("Delete")

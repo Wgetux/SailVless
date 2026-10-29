@@ -185,5 +185,8 @@
   "Every 2 minutes while the screen is on, a tiny request goes through the server. If it fails twice, the connection is restarted; if that does not help, you get a notification.": "Раз в 2 минуты, пока экран включён, через сервер отправляется крошечный запрос. Если он дважды не проходит, соединение перезапускается; если не помогло — придёт уведомление.",
   "Switch to another server automatically": "Переключаться на другой сервер автоматически",
   "When the server stays dead, connect to the fastest other server.": "Если сервер так и не ожил, подключиться к самому быстрому из остальных.",
-  "One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, AmneziaWG only). Also accepted: a full Xray or sing-box JSON config, or an AmneziaWG/WireGuard .conf (paste the whole text).": "По одной ссылке в строке: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, только AmneziaWG). Также можно вставить полный JSON-конфиг Xray или sing-box либо конфиг AmneziaWG/WireGuard (.conf) целиком."
+  "One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, AmneziaWG only). Also accepted: a full Xray or sing-box JSON config, or an AmneziaWG/WireGuard .conf (paste the whole text).": "По одной ссылке в строке: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, только AmneziaWG). Также можно вставить полный JSON-конфиг Xray или sing-box либо конфиг AmneziaWG/WireGuard (.conf) целиком.",
+  "Choose files": "Выбрать файлы",
+  "Config files": "Файлы конфигурации",
+  "Rename": "Переименовать"
 }

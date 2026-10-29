@@ -229,10 +229,16 @@ func (s *Service) Connect(id string) error {
 	case p.Protocol == "xray-json":
 		cfg, err = xray.BuildRaw(p.Raw, opts)
 	case p.Protocol == "amneziawg":
-		// Xray chains to the AmneziaWG sidecar's local SOCKS5
+		// Xray chains to the AmneziaWG sidecar's local SOCKS5; split configs
+		// and the config's DNS shape the routing
 		var chained link.Profile
 		chained, sidecar, err = s.awgSidecar(&p, set)
 		if err == nil {
+			awgRC, dns := awgRouting(&p, rc)
+			opts.Routing = &awgRC
+			if dns != "" {
+				set.RemoteDNS = dns // the TUN asks the same DNS through the tunnel
+			}
 			cfg, err = xray.Build(&chained, opts)
 		}
 	default:

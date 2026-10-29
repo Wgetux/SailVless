@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
@@ -54,9 +55,36 @@ func (a *api) ImportLinks(text string) (string, *dbus.Error) {
 	return toJSON(map[string]any{"imported": ids, "errors": errs}), nil
 }
 
+// ImportFiles takes a JSON array of paths (Qt would marshal a QVariantList
+// as "av", so the list travels as JSON like everything else).
+func (a *api) ImportFiles(pathsJSON string) (string, *dbus.Error) {
+	var paths []string
+	if err := json.Unmarshal([]byte(pathsJSON), &paths); err != nil {
+		return "", dbusErr(err)
+	}
+	ids, errs := []string{}, []string{}
+	for _, p := range paths {
+		i, e, err := a.svc.ImportFile(p)
+		ids = append(ids, i...)
+		errs = append(errs, e...)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	return toJSON(map[string]any{"imported": ids, "errors": errs}), nil
+}
+
 func (a *api) ListProfiles() (string, *dbus.Error) { return toJSON(a.svc.Profiles()), nil }
 
 func (a *api) DeleteProfile(id string) *dbus.Error { return dbusErr(a.svc.DeleteProfile(id)) }
+
+func (a *api) RenameProfile(id, name string) *dbus.Error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return dbusErr(fmt.Errorf("name must not be empty"))
+	}
+	return dbusErr(a.svc.Store.Rename(id, name))
+}
 
 func (a *api) Connect(id string) *dbus.Error { return dbusErr(a.svc.Connect(id)) }
 
@@ -188,8 +216,10 @@ func (a *api) Logs(n int32) (string, *dbus.Error) {
 
 const introXML = `<interface name="` + Interface + `">
   <method name="ImportLinks"><arg direction="in" type="s" name="text"/><arg direction="out" type="s" name="resultJson"/></method>
+  <method name="ImportFiles"><arg direction="in" type="s" name="pathsJson"/><arg direction="out" type="s" name="resultJson"/></method>
   <method name="ListProfiles"><arg direction="out" type="s" name="profilesJson"/></method>
   <method name="DeleteProfile"><arg direction="in" type="s" name="id"/></method>
+  <method name="RenameProfile"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="name"/></method>
   <method name="Connect"><arg direction="in" type="s" name="id"/></method>
   <method name="Disconnect"/>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>
