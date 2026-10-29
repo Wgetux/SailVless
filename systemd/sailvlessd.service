@@ -1,0 +1,15 @@
+[Unit]
+Description=SailVless proxy daemon
+After=dbus.socket
+
+[Service]
+Type=dbus
+BusName=org.sailvless.Daemon
+ExecStart=/usr/bin/sailvlessd
+Environment=SAILVLESS_CORE_DIR=/usr/libexec/sailvless
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=user-session.target
