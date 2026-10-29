@@ -82,14 +82,14 @@ Page {
                     var h = page.sub ? page.sub.intervalHours : 0
                     return h === 0 ? 0 : h === 1 ? 1 : h === 6 ? 2 : h === 12 ? 3 : h === 24 ? 4 : 0
                 }
+                // Silica on Sailfish 5.1 has no ComboBox.activated: react in the menu items
                 menu: ContextMenu {
-                    MenuItem { text: qsTr("As the panel says") }
-                    MenuItem { text: qsTr("1 hour") }
-                    MenuItem { text: qsTr("6 hours") }
-                    MenuItem { text: qsTr("12 hours") }
-                    MenuItem { text: qsTr("24 hours") }
+                    MenuItem { text: qsTr("As the panel says"); onClicked: page.patch({ intervalHours: 0 }) }
+                    MenuItem { text: qsTr("1 hour"); onClicked: page.patch({ intervalHours: 1 }) }
+                    MenuItem { text: qsTr("6 hours"); onClicked: page.patch({ intervalHours: 6 }) }
+                    MenuItem { text: qsTr("12 hours"); onClicked: page.patch({ intervalHours: 12 }) }
+                    MenuItem { text: qsTr("24 hours"); onClicked: page.patch({ intervalHours: 24 }) }
                 }
-                onActivated: page.patch({ intervalHours: [0, 1, 6, 12, 24][index] })
             }
 
             TextSwitch {

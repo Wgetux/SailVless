@@ -183,10 +183,12 @@ Page {
                 menu: ContextMenu {
                     Repeater {
                         model: logLevel.values
-                        MenuItem { text: modelData }
+                        MenuItem {
+                            text: modelData
+                            onClicked: page.patch({ logLevel: modelData })
+                        }
                     }
                 }
-                onActivated: page.patch({ logLevel: values[index] })
             }
 
             Button {

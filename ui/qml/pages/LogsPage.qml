@@ -62,10 +62,12 @@ Page {
                 menu: ContextMenu {
                     Repeater {
                         model: combo.values
-                        MenuItem { text: modelData }
+                        MenuItem {
+                            text: modelData
+                            onClicked: app.run("SetSettings", [JSON.stringify({ logLevel: modelData })])
+                        }
                     }
                 }
-                onActivated: app.run("SetSettings", [JSON.stringify({ logLevel: values[index] })])
             }
 
             Label {
