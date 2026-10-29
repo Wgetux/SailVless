@@ -22,6 +22,8 @@ const ctlUsage = `usage: sailvlessd ctl <command>
   list                   list profiles
   connect [id]           connect (default: selected profile)
   disconnect
+  ping                   TCP ping all servers (ms; -1 failed, -2 n/a for UDP)
+  connect-best           ping and connect to the fastest server
   status
   delete <id>
   settings [json-patch]  show or change settings, e.g. '{"httpPort":0}'
@@ -90,11 +92,19 @@ func ctl(args []string) int {
 				if p.Selected {
 					mark = "*"
 				}
-				fmt.Printf("%s %s  %-12s %-11s %-8s %-8s %s\n", mark, p.ID, p.Protocol, p.Transport.Type, p.Security.Type, p.Core(), p.Name)
+				fmt.Printf("%s %s  %-12s %-11s %-8s %-8s %s\n", mark, p.ID, p.Protocol, p.Transport.Type, p.Security.Type, p.Core, p.Name)
 			}
 		}
 	case "connect":
 		err2 = call("Connect", nil, arg(1))
+	case "ping":
+		if err2 = call("PingAll", []any{&s}); err2 == nil {
+			printJSON(s)
+		}
+	case "connect-best":
+		if err2 = call("ConnectBest", []any{&s}); err2 == nil {
+			fmt.Println("connected to", s)
+		}
 	case "disconnect":
 		err2 = call("Disconnect", nil)
 	case "status":

@@ -48,14 +48,32 @@ if ($Rpm) {
         $env:Path += ';C:\SailfishOS\bin'
     }
     if (-not (Get-Command sfdk -ErrorAction SilentlyContinue)) { throw 'sfdk not found. Install Sailfish SDK 3.13.5 (Docker build engine).' }
-    $outRpm = Join-Path $root 'out\rpm'
-    New-Item -ItemType Directory -Force $outRpm | Out-Null
-    Push-Location $root
+    foreach ($b in 'sailvlessd', 'xray', 'sing-box') {
+        if (-not (Test-Path (Join-Path $outBin $b))) { throw "out\bin\$b missing (run .\build.ps1 -Cores once)" }
+    }
+    & (Join-Path $root 'ui\translations\gen-ts.ps1')
+
+    # The SDK build engine only sees its workspace (the user profile), so the
+    # sources are mirrored there and built in place.
+    $shadow = Join-Path $env:USERPROFILE '.sailvless-build'
+    foreach ($d in 'rpm', 'ui', 'systemd', 'dbus') {
+        robocopy (Join-Path $root $d) (Join-Path $shadow $d) /MIR /NFL /NDL /NJH /NJS /NP /XD .qmake.stash | Out-Null
+        if ($LASTEXITCODE -ge 8) { throw "robocopy $d failed" }
+    }
+    robocopy $outBin (Join-Path $shadow 'bin') /MIR /NFL /NDL /NJH /NJS /NP | Out-Null
+    if ($LASTEXITCODE -ge 8) { throw 'robocopy bin failed' }
+    Remove-Item -Recurse -Force (Join-Path $shadow 'RPMS') -ErrorAction SilentlyContinue
+
+    Push-Location $shadow
     try {
-        sfdk config --push target $Target
-        sfdk config --push output-dir $outRpm
-        sfdk build
+        sfdk -c "target=$Target" build
         if ($LASTEXITCODE) { throw 'sfdk build failed' }
     } finally { Pop-Location }
-    Get-ChildItem $outRpm -Filter *.rpm | ForEach-Object { Write-Host "rpm: $($_.FullName)" }
+
+    $outRpm = Join-Path $root 'out\rpm'
+    New-Item -ItemType Directory -Force $outRpm | Out-Null
+    Get-ChildItem (Join-Path $shadow 'RPMS') -Filter *.rpm | ForEach-Object {
+        Copy-Item $_.FullName $outRpm -Force
+        Write-Host "rpm: $(Join-Path $outRpm $_.Name)"
+    }
 }

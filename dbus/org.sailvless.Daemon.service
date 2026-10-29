@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.sailvless.Daemon
+Exec=/usr/bin/sailvlessd
+SystemdService=sailvlessd.service

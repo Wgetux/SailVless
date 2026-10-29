@@ -33,7 +33,7 @@ func TestDumpConfigs(t *testing.T) {
 	// vmess built from JSON, see link tests; add one here too
 	samples["vmess-ws-tls"] = "vmess://eyJhZGQiOiJleGFtcGxlLmNvbSIsInBvcnQiOiI0NDMiLCJpZCI6IjExMTExMTExLTIyMjItMzMzMy00NDQ0LTU1NTU1NTU1NTU1NSIsIm5ldCI6IndzIiwicGF0aCI6Ii93cyIsInRscyI6InRscyIsInNuaSI6ImV4YW1wbGUuY29tIn0"
 	dir := os.Getenv("SAILVLESS_DUMP")
-	opts := xray.Options{Inbounds: xray.Inbounds{SocksPort: 10808, HTTPPort: 10809, User: "u", Pass: "p"}}
+	opts := xray.Options{Inbounds: xray.Inbounds{SocksPort: 10808, HTTPPort: 10809, User: "u", Pass: "p"}, APIListen: "127.0.0.1:10900", APISecret: "s"}
 	for name, s := range samples {
 		p, err := link.Parse(s)
 		if err != nil {

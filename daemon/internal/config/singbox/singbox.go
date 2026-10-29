@@ -52,6 +52,8 @@ func Build(p *link.Profile, o Options) ([]byte, []string, error) {
 			_ = json.Unmarshal([]byte(p.Raw), &full)
 			full["inbounds"] = inbounds(o.Inbounds)
 			full["log"] = logCfg(o.LogLevel)
+			// foreign experimental settings may write files or open UIs; replace them
+			full["experimental"] = experimental(o)
 			b, err := json.MarshalIndent(full, "", "  ")
 			return b, nil, err
 		}
@@ -69,9 +71,18 @@ func Build(p *link.Profile, o Options) ([]byte, []string, error) {
 			"default_domain_resolver": "local",
 			"rules":                   []any{obj{"action": "sniff"}},
 		},
+		"experimental": experimental(o),
 	}
 	b, err := json.MarshalIndent(cfg, "", "  ")
 	return b, warnings, err
+}
+
+// experimental enables the clash API (traffic counters) on loopback with a secret.
+func experimental(o Options) obj {
+	if o.APIListen == "" {
+		return obj{}
+	}
+	return obj{"clash_api": obj{"external_controller": o.APIListen, "secret": o.APISecret}}
 }
 
 func logCfg(level string) obj {

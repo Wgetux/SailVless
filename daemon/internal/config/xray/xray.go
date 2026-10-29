@@ -20,6 +20,30 @@ type Inbounds struct {
 type Options struct {
 	Inbounds Inbounds
 	LogLevel string // debug, info, warning, error, none
+	// APIListen enables traffic stats on this loopback address
+	// (Xray StatsService / sing-box clash API protected by APISecret).
+	APIListen string
+	APISecret string
+}
+
+// addStats enables per-outbound traffic counters and the stats API.
+func addStats(cfg map[string]any, listen string) {
+	if listen == "" {
+		return
+	}
+	cfg["stats"] = obj{}
+	cfg["api"] = obj{"tag": "api", "listen": listen, "services": []string{"StatsService"}}
+	policy, _ := cfg["policy"].(map[string]any)
+	if policy == nil {
+		policy = obj{}
+	}
+	sys, _ := policy["system"].(map[string]any)
+	if sys == nil {
+		sys = obj{}
+	}
+	sys["statsOutboundUplink"], sys["statsOutboundDownlink"] = true, true
+	policy["system"] = sys
+	cfg["policy"] = policy
 }
 
 type obj = map[string]any
@@ -39,6 +63,7 @@ func Build(p *link.Profile, o Options) ([]byte, error) {
 		"inbounds":  inbounds(o.Inbounds),
 		"outbounds": []any{out, obj{"tag": "direct", "protocol": "freedom"}, obj{"tag": "block", "protocol": "blackhole"}},
 	}
+	addStats(cfg, o.APIListen)
 	return json.MarshalIndent(cfg, "", "  ")
 }
 
@@ -114,6 +139,7 @@ func BuildRaw(raw string, o Options) ([]byte, error) {
 	logCfg["access"] = "none"
 	delete(logCfg, "error")
 	cfg["log"] = logCfg
+	addStats(cfg, o.APIListen)
 	return json.MarshalIndent(cfg, "", "  ")
 }
 

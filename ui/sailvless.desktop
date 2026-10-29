@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=sailvless
+Exec=/usr/bin/sailvless
+Name=SailVless
+Comment=VLESS / VMess / Trojan / Hysteria2 proxy client
+Comment[ru]=Прокси-клиент VLESS / VMess / Trojan / Hysteria2
+
+[X-Sailjail]
+# The UI talks to sailvlessd over the session D-Bus, which the sandbox blocks.
+Sandboxing=Disabled

@@ -37,18 +37,24 @@ type Service struct {
 	mu        sync.Mutex
 	activeID  string
 	activeCfg store.Settings
+	stats     *statsSource
+	pings     map[string]int
 }
+
+var errNoReachable = errors.New("no reachable server")
 
 type Status struct {
 	State       core.State `json:"state"`
 	Error       string     `json:"error,omitempty"`
 	ProfileID   string     `json:"profileId,omitempty"`
 	ProfileName string     `json:"profileName,omitempty"`
+	Core        string     `json:"core,omitempty"`
 	Since       int64      `json:"since,omitempty"` // unix seconds
 	Listen      string     `json:"listen"`
 	SocksPort   int        `json:"socksPort"`
 	HTTPPort    int        `json:"httpPort"`
 	Auth        bool       `json:"auth"`
+	Traffic     *Traffic   `json:"traffic,omitempty"`
 }
 
 func New(st *store.Store, coreDir, runtimeDir string) *Service {
@@ -99,17 +105,36 @@ func (s *Service) Import(text string) ([]string, []string, error) {
 // ProfileView is a profile without credentials, for the UI.
 type ProfileView struct {
 	link.Profile
-	Selected bool `json:"selected"`
+	Selected bool   `json:"selected"`
+	Ping     *int   `json:"ping,omitempty"` // ms, PingFailed, PingNA; absent = not measured
+	Core     string `json:"core"`
 }
 
 func (s *Service) Profiles() []ProfileView {
 	sel := s.Store.Settings().SelectedID
+	s.mu.Lock()
+	pings := s.pings
+	s.mu.Unlock()
 	var out []ProfileView
 	for _, p := range s.Store.Profiles() {
-		p.UUID, p.Password, p.Raw, p.ObfsPassword = "", "", "", ""
-		out = append(out, ProfileView{Profile: p, Selected: p.ID == sel})
+		v := ProfileView{Profile: p, Selected: p.ID == sel, Core: p.Core()}
+		if ms, ok := pings[p.ID]; ok {
+			v.Ping = &ms
+		}
+		v.UUID, v.Password, v.Raw, v.ObfsPassword = "", "", "", ""
+		out = append(out, v)
 	}
 	return out
+}
+
+// SelectProfile marks a server as selected without connecting.
+func (s *Service) SelectProfile(id string) error {
+	if _, ok := s.Store.Profile(id); !ok {
+		return errors.New("no such profile")
+	}
+	set := s.Store.Settings()
+	set.SelectedID = id
+	return s.Store.SetSettings(set)
 }
 
 func (s *Service) DeleteProfile(id string) error {
@@ -142,14 +167,19 @@ func (s *Service) Connect(id string) error {
 	if set.AuthEnabled {
 		user, pass = s.Store.ProxyCredentials()
 	}
+	apiPort, err := freePort()
+	if err != nil {
+		return err
+	}
 	opts := xray.Options{
-		Inbounds: xray.Inbounds{Listen: set.Listen, SocksPort: set.SocksPort, HTTPPort: set.HTTPPort, User: user, Pass: pass},
-		LogLevel: set.LogLevel,
+		Inbounds:  xray.Inbounds{Listen: set.Listen, SocksPort: set.SocksPort, HTTPPort: set.HTTPPort, User: user, Pass: pass},
+		LogLevel:  set.LogLevel,
+		APIListen: net.JoinHostPort("127.0.0.1", strconv.Itoa(apiPort)),
+		APISecret: store.RandomToken(16),
 	}
 	coreName := p.Core()
 	var cfg []byte
 	var warnings []string
-	var err error
 	switch {
 	case coreName == "sing-box":
 		cfg, warnings, err = singbox.Build(&p, opts)
@@ -179,6 +209,7 @@ func (s *Service) Connect(id string) error {
 	}
 	s.mu.Lock()
 	s.activeID, s.activeCfg = id, set
+	s.stats = newStatsSource(coreName, s.CoreDir, apiPort, opts.APISecret)
 	s.mu.Unlock()
 	s.Logs.Add("sailvlessd: ", fmt.Sprintf("connecting to %q via %s", p.Name, coreName))
 	spec := core.Spec{
@@ -241,9 +272,31 @@ func loopbackFor(listen string) string {
 func (s *Service) Disconnect() {
 	s.Runner.Stop()
 	s.mu.Lock()
-	s.activeID = ""
+	s.activeID, s.stats = "", nil
 	s.mu.Unlock()
 	s.removeConfigs()
+}
+
+func freePort() (int, error) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+// StatusWithTraffic adds traffic counters (polled from the core on demand).
+func (s *Service) StatusWithTraffic() Status {
+	out := s.Status()
+	s.mu.Lock()
+	src := s.stats
+	s.mu.Unlock()
+	if src != nil && out.State == core.Connected {
+		t := src.get()
+		out.Traffic = &t
+	}
+	return out
 }
 
 func (s *Service) Status() Status {
@@ -257,6 +310,7 @@ func (s *Service) Status() Status {
 	out := Status{State: st, Error: msg, ProfileID: id, Listen: set.Listen, SocksPort: set.SocksPort, HTTPPort: set.HTTPPort, Auth: set.AuthEnabled}
 	if p, ok := s.Store.Profile(id); ok {
 		out.ProfileName = p.Name
+		out.Core = p.Core()
 	}
 	if !since.IsZero() {
 		out.Since = since.Unix()

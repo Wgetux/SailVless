@@ -63,7 +63,17 @@ func (a *api) Connect(id string) *dbus.Error { return dbusErr(a.svc.Connect(id))
 
 func (a *api) Disconnect() *dbus.Error { a.svc.Disconnect(); return nil }
 
-func (a *api) Status() (string, *dbus.Error) { return toJSON(a.svc.Status()), nil }
+func (a *api) Status() (string, *dbus.Error) { return toJSON(a.svc.StatusWithTraffic()), nil }
+
+func (a *api) SelectProfile(id string) *dbus.Error { return dbusErr(a.svc.SelectProfile(id)) }
+
+// PingAll returns {"id": ms} (-1 failed, -2 not applicable for UDP protocols).
+func (a *api) PingAll() (string, *dbus.Error) { return toJSON(a.svc.PingAll()), nil }
+
+func (a *api) ConnectBest() (string, *dbus.Error) {
+	id, err := a.svc.ConnectBest()
+	return id, dbusErr(err)
+}
 
 func (a *api) GetSettings() (string, *dbus.Error) { return toJSON(a.svc.Store.Settings()), nil }
 
@@ -167,6 +177,9 @@ const introXML = `<interface name="` + Interface + `">
   <method name="Connect"><arg direction="in" type="s" name="id"/></method>
   <method name="Disconnect"/>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>
+  <method name="SelectProfile"><arg direction="in" type="s" name="id"/></method>
+  <method name="PingAll"><arg direction="out" type="s" name="pingsJson"/></method>
+  <method name="ConnectBest"><arg direction="out" type="s" name="id"/></method>
   <method name="GetSettings"><arg direction="out" type="s" name="settingsJson"/></method>
   <method name="SetSettings"><arg direction="in" type="s" name="patchJson"/></method>
   <method name="GetProxyCredentials"><arg direction="out" type="s" name="user"/><arg direction="out" type="s" name="password"/></method>
