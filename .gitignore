@@ -1,0 +1,14 @@
+# build output
+/out/
+/cores/src/
+/cores/bin/
+*.rpm
+
+# secrets / local test data — never commit
+secrets*.json
+*.secret
+/local/
+
+# editors
+.vscode/
+*.user

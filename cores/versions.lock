@@ -1,0 +1,5 @@
+# Proxy cores built from official sources at pinned tags.
+# Format: name|repo|tag|commit|go-build-tags
+# commit: expected commit of the tag; empty = recorded by build-cores.ps1 on first build, verified afterwards.
+xray|https://github.com/XTLS/Xray-core.git|v26.10.21||
+sing-box|https://github.com/SagerNet/sing-box.git|v1.14.4||with_quic,with_utls,with_gvisor,with_v2ray_api,with_clash_api
