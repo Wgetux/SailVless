@@ -16,6 +16,7 @@ const (
 	chainOut = "SAILVLESS_OUT"
 	chainPre = "SAILVLESS_PRE"
 	vmarkSys = "/proc/sys/net/ipv4/conf/all/src_valid_mark"
+	rpSys    = "/proc/sys/net/ipv4/conf/all/rp_filter"
 )
 
 func run(name string, args ...string) error {
@@ -42,13 +43,18 @@ func run(name string, args ...string) error {
 //   - "fwmark Mark lookup main" ahead of sing-box's rules;
 //   - CONNMARK restores the mark on replies and src_valid_mark makes the
 //     reverse-path filter honour it (wlan0 has rp_filter=1, replies would be
-//     dropped otherwise).
+//     dropped otherwise);
+//   - loose rp_filter: unmarked sockets bound to the uplink bypass the tunnel
+//     too, and their replies fail the strict check (the reverse route points
+//     to the TUN). connmand's online check is one: it would never pass, the
+//     system would stay "ready", not "online", and connman-vpnd starts VPNs
+//     without a daemon (ours) only when online.
 func SetupNetwork() error {
 	Cleanup()
-	if b, err := os.ReadFile(vmarkSys); err == nil {
-		_ = os.WriteFile(filepath.Join(RuntimeDir, "src_valid_mark"), b, 0o600)
+	if err := setSysctl(vmarkSys, "src_valid_mark", "1"); err != nil {
+		return err
 	}
-	if err := os.WriteFile(vmarkSys, []byte("1"), 0o644); err != nil {
+	if err := setSysctl(rpSys, "rp_filter", "2"); err != nil {
 		return err
 	}
 	mark := "0x" + strconv.FormatInt(Mark, 16)
@@ -64,9 +70,6 @@ func SetupNetwork() error {
 		if err := run("ip", fam, "rule", "add", "fwmark", mark, "unreachable", "pref", stop); err != nil {
 			return err
 		}
-	}
-	if err := setupDNSRedirect(mark); err != nil {
-		return err
 	}
 	flushResolver()
 	for _, ipt := range []string{"iptables", "ip6tables"} {
@@ -87,12 +90,8 @@ func SetupNetwork() error {
 			}
 		}
 	}
-	return nil
+	return setupDNSRedirect(mark)
 }
-
-// DNSTarget is an address inside the TUN subnet: DNS sent there reaches
-// sing-box, which answers it through the proxy (hijack-dns).
-const DNSTarget = "172.19.0.2"
 
 const (
 	chainDNS  = "SAILVLESS_DNS"
@@ -104,19 +103,22 @@ var privateV4 = "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10,169.254.0
 // setupDNSRedirect closes the DNS leak around the tunnel: LAN ranges are
 // excluded from the TUN (so the phone stays reachable from the LAN), but the
 // system resolver usually asks the router (192.168.x.1), which would forward
-// queries to the provider. Such queries are DNAT-ed into the tunnel. The kernel
-// has no IPv6 NAT, so DNS to private IPv6 servers is rejected and the
-// resolver falls back to IPv4. Marked traffic (the core itself) is left alone.
+// queries to the provider. Such queries get a mark that re-routes them into
+// the TUN, where sing-box answers them (hijack-dns): the tunnel's own table
+// has no LAN routes, so they use DNSTable, see RouteDNS. A socket bound to the
+// uplink (connmand's online check) has no route there and stays on it, which a
+// DNAT would break. The kernel has no IPv6 NAT, so DNS to private IPv6
+// servers is rejected and the resolver falls back to IPv4. Marked traffic (the
+// core itself) is left alone.
 func setupDNSRedirect(mark string) error {
-	cmds := [][]string{
-		{"-t", "nat", "-N", chainDNS},
-		{"-t", "nat", "-A", chainDNS, "-m", "mark", "--mark", mark, "-j", "RETURN"},
-		{"-t", "nat", "-A", chainDNS, "-d", privateV4, "-p", "udp", "--dport", "53", "-j", "DNAT", "--to-destination", DNSTarget + ":53"},
-		{"-t", "nat", "-A", chainDNS, "-d", privateV4, "-p", "tcp", "--dport", "53", "-j", "DNAT", "--to-destination", DNSTarget + ":53"},
-		{"-t", "nat", "-I", "OUTPUT", "-j", chainDNS},
+	dnsMark := "0x" + strconv.FormatInt(DNSMark, 16)
+	if err := run("ip", "-4", "rule", "add", "fwmark", dnsMark, "lookup", strconv.Itoa(DNSTable),
+		"pref", strconv.Itoa(MarkRulePref+2)); err != nil {
+		return err
 	}
-	for _, c := range cmds {
-		if err := run("iptables", append([]string{"-w"}, c...)...); err != nil {
+	for _, proto := range []string{"udp", "tcp"} {
+		if err := run("iptables", "-w", "-t", "mangle", "-A", chainOut, "-m", "mark", "!", "--mark", mark,
+			"-d", privateV4, "-p", proto, "--dport", "53", "-j", "MARK", "--set-mark", dnsMark); err != nil {
 			return err
 		}
 	}
@@ -135,6 +137,12 @@ func setupDNSRedirect(mark string) error {
 	return nil
 }
 
+// RouteDNS points DNSTable at the TUN; call it when the interface is up
+// (the route goes away with the interface).
+func RouteDNS() error {
+	return run("ip", "-4", "route", "replace", "default", "dev", IfName, "table", strconv.Itoa(DNSTable))
+}
+
 // Cleanup removes everything SetupNetwork and sing-box's auto_route may have
 // left behind (also after a crash). Safe to call any time.
 func Cleanup() {
@@ -144,6 +152,7 @@ func Cleanup() {
 			}
 		}
 		_ = run("ip", fam, "route", "flush", "table", strconv.Itoa(TableIndex))
+		_ = run("ip", fam, "route", "flush", "table", strconv.Itoa(DNSTable))
 	}
 	_ = run("ip", "link", "del", IfName)
 	for _, ipt := range []string{"iptables", "ip6tables"} {
@@ -160,12 +169,26 @@ func Cleanup() {
 	_ = run("ip6tables", "-w", "-D", "OUTPUT", "-j", chainDNS6)
 	_ = run("ip6tables", "-w", "-F", chainDNS6)
 	_ = run("ip6tables", "-w", "-X", chainDNS6)
-	saved := filepath.Join(RuntimeDir, "src_valid_mark")
+	restoreSysctl(vmarkSys, "src_valid_mark")
+	restoreSysctl(rpSys, "rp_filter")
+	flushResolver()
+}
+
+// setSysctl saves the current value in RuntimeDir (Cleanup restores it, also
+// after a crash) and writes the new one.
+func setSysctl(path, name, value string) error {
+	if b, err := os.ReadFile(path); err == nil {
+		_ = os.WriteFile(filepath.Join(RuntimeDir, name), b, 0o600)
+	}
+	return os.WriteFile(path, []byte(value), 0o644)
+}
+
+func restoreSysctl(path, name string) {
+	saved := filepath.Join(RuntimeDir, name)
 	if b, err := os.ReadFile(saved); err == nil {
-		_ = os.WriteFile(vmarkSys, b, 0o644)
+		_ = os.WriteFile(path, b, 0o644)
 		_ = os.Remove(saved)
 	}
-	flushResolver()
 }
 
 // flushResolver drops systemd-resolved's cache: answers obtained outside the

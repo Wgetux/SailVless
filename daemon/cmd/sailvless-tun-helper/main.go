@@ -46,11 +46,11 @@ type helper struct {
 	owner    string       // unique bus name of the caller that started the tunnel
 	lastUsed time.Time
 
-	lastState          string    // last emitted state, to notice the tunnel coming up
-	restarting         bool      // Start is replacing the tunnel: "stopped" in between is not news
-	exiting            bool      // the helper itself is stopping (e.g. package update)
-	sysConnecting      bool      // connmanConnect is running (it retries)
-	ownDisconnectUntil time.Time // a disconnect reported until then is the helper's own reset
+	lastState     string    // last emitted state, to notice the tunnel coming up
+	restarting    bool      // Start is replacing the tunnel: "stopped" in between is not news
+	exiting       bool      // the helper itself is stopping (e.g. package update)
+	netChanged    time.Time // connmand last left the online state
+	sysConnecting bool      // connmanConnect is running (it retries)
 }
 
 type status struct {
@@ -107,6 +107,8 @@ func serve() error {
 
 	// watchdog: stop the tunnel when the daemon that started it goes away
 	_ = conn.AddMatchSignal(dbus.WithMatchInterface("org.freedesktop.DBus"), dbus.WithMatchMember("NameOwnerChanged"))
+	// connmand's global state, to tell network changes from the user's actions
+	_ = conn.AddMatchSignal(dbus.WithMatchInterface("net.connman.Manager"), dbus.WithMatchMember("PropertyChanged"))
 	signals := make(chan *dbus.Signal, 16)
 	conn.Signal(signals)
 
@@ -118,6 +120,16 @@ func serve() error {
 	for {
 		select {
 		case s := <-signals:
+			if s.Name == "net.connman.Manager.PropertyChanged" && len(s.Body) == 2 {
+				if key, _ := s.Body[0].(string); key == "State" {
+					v, _ := s.Body[1].(dbus.Variant)
+					if st, _ := v.Value().(string); st != "online" {
+						h.mu.Lock()
+						h.netChanged = time.Now()
+						h.mu.Unlock()
+					}
+				}
+			}
 			if s.Name == "org.freedesktop.DBus.NameOwnerChanged" && len(s.Body) == 3 {
 				name, _ := s.Body[0].(string)
 				newOwner, _ := s.Body[2].(string)
@@ -173,6 +185,9 @@ func (h *helper) emit() {
 	h.lastState = st.State
 	h.mu.Unlock()
 	if becameUp {
+		if err := tun.RouteDNS(); err != nil {
+			h.logs.Add("helper: ", "DNS route: "+err.Error())
+		}
 		go h.connmanConnect() // show the tunnel as a system VPN
 	}
 }

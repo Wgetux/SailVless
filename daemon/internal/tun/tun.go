@@ -21,6 +21,8 @@ const (
 	// Mark is set (SO_MARK) on every socket of the proxy core; marked traffic
 	// bypasses the tunnel via an fwmark rule. Kernel 4.9 has no uid rules.
 	Mark = 0x5356
+	// DNSMark sends DNS meant for LAN servers through the tunnel.
+	DNSMark = 0x5357
 
 	Interface4 = "172.19.0.1/30"
 	Interface6 = "fdfe:dcba:9876::1/126"
@@ -31,6 +33,7 @@ const (
 	RuleIndex    = 9100
 	RuleLast     = 9120 // sing-box uses RuleIndex..RuleIndex+10
 	TableIndex   = 7353
+	DNSTable     = 7354 // only "default dev svtun0", for DNSMark
 )
 
 // Params is what the daemon sends to the helper.

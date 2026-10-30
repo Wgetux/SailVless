@@ -21,6 +21,9 @@ const (
 	vpnManager = "net.connman.vpn.Manager"
 	vpnConn    = "net.connman.vpn.Connection"
 	vpnType    = "sailvless"
+
+	netSettle = 1500 * time.Millisecond // connmand reports the network after the VPN
+	netQuiet  = 5 * time.Second         // a disconnect this soon after a change is not the user's
 )
 
 // RequestConnect / RequestDisconnect are called by the connman plugin when the
@@ -36,13 +39,9 @@ func (h *helper) RequestDisconnect() *dbus.Error {
 	// that is not the user either, the daemon brings the new helper up
 	h.mu.Lock()
 	exiting := h.exiting
-	own := time.Now().Before(h.ownDisconnectUntil)
 	h.mu.Unlock()
 	if exiting {
 		h.logs.Add("helper: ", "exiting, keeping the system VPN switch on")
-		return nil
-	}
-	if own { // connmanConnectOnce is resetting a stale attempt
 		return nil
 	}
 	// connman-vpnd disconnects every VPN when it stops (package update, phone
@@ -51,9 +50,27 @@ func (h *helper) RequestDisconnect() *dbus.Error {
 		h.logs.Add("helper: ", "connman-vpnd is "+st+", keeping the tunnel")
 		return nil
 	}
-	h.logs.Add("helper: ", "system VPN switch: disconnect requested")
-	_ = h.conn.Emit(tun.Path, tun.Interface+".Requested", "disconnect")
+	// connmand also takes VPNs down when the network goes away: the tunnel must
+	// survive that. The system VPN comes back with the network (RestartCore).
+	go func() {
+		time.Sleep(netSettle)
+		if h.networkChanging() {
+			h.logs.Add("helper: ", "network changed, keeping the tunnel")
+			return
+		}
+		h.logs.Add("helper: ", "system VPN switch: disconnect requested")
+		_ = h.conn.Emit(tun.Path, tun.Interface+".Requested", "disconnect")
+	}()
 	return nil
+}
+
+// networkChanging tells a disconnect caused by the network from the user's.
+func (h *helper) networkChanging() bool {
+	h.mu.Lock()
+	recent := time.Since(h.netChanged) < netQuiet
+	h.mu.Unlock()
+	st := h.connmanState("net.connman", "/", "net.connman.Manager")
+	return recent || st != "online" && st != "ready"
 }
 
 // unitState returns the ActiveState of a systemd unit ("unknown" on errors).
@@ -105,7 +122,7 @@ func (h *helper) connmanProvider() (dbus.ObjectPath, error) {
 // (started from the app). With the tunnel interface already present the
 // plugin reports READY at once; it never changes routes or DNS. connmand
 // refuses while the phone has no network yet (tunnel restored at boot before
-// Wi-Fi is up), so it retries for a minute; a network change calls it again.
+// Wi-Fi is up), so it retries for a few minutes; a network change calls it again.
 func (h *helper) connmanConnect() {
 	h.mu.Lock()
 	if h.sysConnecting {
@@ -139,7 +156,7 @@ func (h *helper) connmanConnect() {
 			h.logs.Add("helper: ", "system VPN connect: "+err.Error()+", retrying")
 			lastErr = err.Error()
 		}
-		if try == 30 { // ~4 min: longer than connmand's timeout for a stale attempt
+		if try == 30 { // a few minutes; the next network change starts over
 			h.logs.Add("helper: ", "system VPN connect: giving up until the next network change")
 			return
 		}
@@ -158,17 +175,6 @@ func (h *helper) connmanConnectOnce() error {
 	// connman-vpnd only accepts Connect from connmand: go through its service
 	// object, vpn_<connection id>
 	svc := dbus.ObjectPath("/net/connman/service/vpn_" + path[strings.LastIndex(string(path), "/")+1:])
-	// connmand can be stuck in a stale attempt (connman-vpnd restarted while
-	// it was connecting): it then answers InProgress forever. Cancel it first;
-	// the disconnect the plugin reports for it is ours, not the user's.
-	if st := h.connmanState("net.connman", svc, "net.connman.Service"); st == "association" || st == "configuration" {
-		h.logs.Add("helper: ", "system VPN: connmand stuck in "+st+", resetting it")
-		h.mu.Lock()
-		h.ownDisconnectUntil = time.Now().Add(10 * time.Second)
-		h.mu.Unlock()
-		h.connmanCall(svc, "Disconnect")
-		time.Sleep(2 * time.Second)
-	}
 	// Connect answers only when the connection is done: don't wait for it
 	err = h.connmanCall(svc, "Connect")
 	var de dbus.Error
@@ -176,8 +182,8 @@ func (h *helper) connmanConnectOnce() error {
 		(de.Name == "net.connman.Error.InProgress" || de.Name == "net.connman.Error.AlreadyConnected")) {
 		return err
 	}
-	// a freshly started connman-vpnd accepts the call but drops it until it
-	// has paired with connmand: only READY means it worked
+	// connman-vpnd may hold the request: it starts VPNs without a daemon only
+	// once connmand is online. Only READY means it worked.
 	for i := 0; i < 5; i++ {
 		if h.connmanState(vpnBus, path, vpnConn) == "ready" {
 			return nil
