@@ -45,6 +45,8 @@ type helper struct {
 	side     *core.Runner // AmneziaWG sidecar, if any
 	owner    string       // unique bus name of the caller that started the tunnel
 	lastUsed time.Time
+
+	lastState string // last emitted state, to notice the tunnel coming up
 }
 
 type status struct {
@@ -83,7 +85,10 @@ func serve() error {
   <method name="RestartCore"/>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>
   <method name="Logs"><arg direction="in" type="i" name="lines"/><arg direction="out" type="s" name="text"/></method>
+  <method name="RequestConnect"/>
+  <method name="RequestDisconnect"/>
   <signal name="StateChanged"><arg type="s" name="statusJson"/></signal>
+  <signal name="Requested"><arg type="s" name="action"/></signal>
 </interface>` + introspect.IntrospectDataString + `</node>`
 	if err := conn.Export(introspect.Introspectable(node), tun.Path, "org.freedesktop.DBus.Introspectable"); err != nil {
 		return err
@@ -135,8 +140,16 @@ func serve() error {
 }
 
 func (h *helper) emit() {
-	b, _ := json.Marshal(h.status())
+	st := h.status()
+	b, _ := json.Marshal(st)
 	_ = h.conn.Emit(tun.Path, tun.Interface+".StateChanged", string(b))
+	h.mu.Lock()
+	becameUp := st.State == "connected" && h.lastState != "connected"
+	h.lastState = st.State
+	h.mu.Unlock()
+	if becameUp {
+		go h.connmanConnect() // show the tunnel as a system VPN
+	}
 }
 
 // status combines both processes: connected only when both are up.
@@ -361,7 +374,13 @@ func (h *helper) RestartCore() *dbus.Error {
 }
 
 func (h *helper) Stop() *dbus.Error {
+	h.mu.Lock()
+	idle := h.core == nil && h.tunR == nil
+	h.mu.Unlock()
 	h.stop()
+	if idle {
+		h.emit() // the connman plugin may be waiting for a start that failed
+	}
 	return nil
 }
 

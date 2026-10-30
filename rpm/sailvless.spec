@@ -1,6 +1,6 @@
 Name:       sailvless
 Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC proxy client
-Version:    0.9.5
+Version:    0.9.6
 Release:    1
 # own code + bundled cores: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later)
 License:    MPL-2.0 AND GPL-3.0-or-later
@@ -21,6 +21,9 @@ BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  qt5-qttools-linguist
+BuildRequires:  connman-devel
+BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(glib-2.0)
 
 %description
 Proxy client for Sailfish OS in the spirit of v2rayNG: subscriptions (with
@@ -31,6 +34,9 @@ with optional authentication. Cores: Xray-core and sing-box.
 # sfdk builds in place (build.ps1 mirrors the sources into the SDK workspace)
 
 %build
+# connman-vpnd plugin: shows the tunnel as a system VPN (status bar icon)
+gcc %{optflags} -shared -fPIC -Wall $(pkg-config --cflags dbus-1 glib-2.0) \
+    -o connman/sailvless.so connman/sailvless-vpn.c
 cd ui
 %qmake5 VERSION=%{version}
 %make_build
@@ -52,6 +58,8 @@ install -D -m 755 bin/sailvless-tun-helper %{buildroot}%{_libexecdir}/sailvless/
 install -D -m 644 systemd/sailvless-tun.service %{buildroot}%{_unitdir}/sailvless-tun.service
 install -D -m 644 dbus/org.sailvless.Tun.conf %{buildroot}%{_sysconfdir}/dbus-1/system.d/org.sailvless.Tun.conf
 install -D -m 644 dbus/org.sailvless.Tun.system.service %{buildroot}%{_datadir}/dbus-1/system-services/org.sailvless.Tun.service
+install -D -m 755 connman/sailvless.so %{buildroot}%{_libdir}/connman/plugins-vpn/sailvless.so
+install -D -m 644 connman/sailfish-vpn/details.qml %{buildroot}%{_datadir}/sailfish-vpn/sailvless/details.qml
 
 %post
 systemctl daemon-reload || :
@@ -59,6 +67,8 @@ systemctl daemon-reload || :
 systemctl try-restart sailvless-tun.service || :
 systemctl-user daemon-reload || :
 systemctl-user try-restart sailvlessd.service || :
+# load the VPN plugin (connman-vpnd only runs VPN connections, the network stays up)
+systemctl try-restart connman-vpn.service || :
 
 %preun
 if [ $1 -eq 0 ]; then
@@ -67,6 +77,7 @@ if [ $1 -eq 0 ]; then
 fi
 
 %postun
+systemctl try-restart connman-vpn.service || :
 systemctl daemon-reload || :
 systemctl-user daemon-reload || :
 
@@ -84,3 +95,5 @@ systemctl-user daemon-reload || :
 %{_unitdir}/sailvless-tun.service
 %config %{_sysconfdir}/dbus-1/system.d/org.sailvless.Tun.conf
 %{_datadir}/dbus-1/system-services/org.sailvless.Tun.service
+%{_libdir}/connman/plugins-vpn/sailvless.so
+%{_datadir}/sailfish-vpn/sailvless

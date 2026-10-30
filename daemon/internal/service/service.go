@@ -52,6 +52,7 @@ type Service struct {
 	pings     map[string]int
 
 	tunConn   *dbus.Conn
+	tunConnMu sync.Mutex // serializes opening tunConn
 	tunActive bool
 	tunState  tunStatus
 	tunLostAt time.Time

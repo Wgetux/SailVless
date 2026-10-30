@@ -68,6 +68,7 @@ func run() error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	go svc.WatchSystemVPN()
 	go svc.AutoUpdateLoop(ctx)
 	go svc.WatchNetwork(ctx)
 	go svc.HealthLoop(ctx)

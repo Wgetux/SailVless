@@ -40,6 +40,8 @@ func (t tunStatus) coreState() core.State {
 // tunBus returns the system bus connection, subscribing to helper signals once.
 // The connection stays open: the helper stops the tunnel when it goes away.
 func (s *Service) tunBus() (*dbus.Conn, error) {
+	s.tunConnMu.Lock()
+	defer s.tunConnMu.Unlock()
 	s.mu.Lock()
 	c := s.tunConn
 	s.mu.Unlock()
@@ -60,6 +62,11 @@ func (s *Service) tunBus() (*dbus.Conn, error) {
 		c.Close()
 		return nil, err
 	}
+	// the system VPN switch (connman plugin) asks the helper, which relays it here
+	if err := c.AddMatchSignal(dbus.WithMatchObjectPath(tun.Path), dbus.WithMatchInterface(tun.Interface), dbus.WithMatchMember("Requested")); err != nil {
+		c.Close()
+		return nil, err
+	}
 	ch := make(chan *dbus.Signal, 16)
 	c.Signal(ch)
 	go func() {
@@ -67,6 +74,13 @@ func (s *Service) tunBus() (*dbus.Conn, error) {
 			if sig.Name == "org.freedesktop.DBus.NameOwnerChanged" {
 				if len(sig.Body) == 3 && sig.Body[2] == "" {
 					s.helperLost()
+				}
+				continue
+			}
+			if sig.Name == tun.Interface+".Requested" {
+				if len(sig.Body) == 1 {
+					action, _ := sig.Body[0].(string)
+					go s.systemVPNRequest(action)
 				}
 				continue
 			}
@@ -134,6 +148,49 @@ func (s *Service) startTun(p *link.Profile, coreName string, cfg []byte, set sto
 		return errors.New("TUN: " + msg)
 	}
 	return nil
+}
+
+// WatchSystemVPN subscribes to the helper early, so the system VPN switch
+// works before the app has started a tunnel in this daemon session.
+func (s *Service) WatchSystemVPN() {
+	if _, err := s.tunBus(); err != nil {
+		s.Logs.Add("sailvlessd: ", "system VPN switch unavailable: "+err.Error())
+	}
+}
+
+// systemVPNRequest acts on the system VPN switch: on means the selected
+// server in TUN mode (the only mode the system shows as a VPN).
+func (s *Service) systemVPNRequest(action string) {
+	s.mu.Lock()
+	tunOn, st := s.tunActive, s.tunState.State
+	s.mu.Unlock()
+	switch action {
+	case "connect":
+		if tunOn && (st == "connecting" || st == "connected") {
+			return
+		}
+		set := s.Store.Settings()
+		if !set.TunMode {
+			set.TunMode = true
+			if err := s.Store.SetSettings(set); err != nil {
+				s.Logs.Add("sailvlessd: ", "system VPN: "+err.Error())
+				return
+			}
+		}
+		s.Logs.Add("sailvlessd: ", "system VPN switched on")
+		if err := s.Connect(""); err != nil {
+			s.Logs.Add("sailvlessd: ", "system VPN: "+err.Error())
+			// the plugin waits for the tunnel; a stop tells it the switch failed
+			if c, err := s.tunBus(); err == nil {
+				c.Object(tun.BusName, tun.Path).Go(tun.Interface+".Stop", 0, nil)
+			}
+		}
+	case "disconnect":
+		if tunOn {
+			s.Logs.Add("sailvlessd: ", "system VPN switched off")
+			s.Disconnect()
+		}
+	}
 }
 
 // helperLost marks the tunnel as failed and retries once; repeated losses
