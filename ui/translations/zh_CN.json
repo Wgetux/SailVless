@@ -204,5 +204,7 @@
   "Pull down to add one": "下拉以添加",
   "Add a server first": "请先添加服务器",
   "License": "许可证",
-  "Free software: you may share and change it under the GNU GPL v3 or later. Source code:": "自由软件：你可以依据 GNU GPL 第 3 版或更新版本分享和修改它。源代码："
+  "Free software: you may share and change it under the GNU GPL v3 or later. Source code:": "自由软件：你可以依据 GNU GPL 第 3 版或更新版本分享和修改它。源代码：",
+  "Connect when the phone starts": "手机启动时连接",
+  "If you were connected before restarting the phone, connect again. Off: stay disconnected until you connect.": "如果重启手机前处于连接状态，则重新连接。关闭：保持断开，直到你手动连接。"
 }

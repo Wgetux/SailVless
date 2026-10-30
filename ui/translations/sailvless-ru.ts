@@ -654,6 +654,14 @@
         <translation>Надёжность</translation>
     </message>
     <message>
+        <source>Connect when the phone starts</source>
+        <translation>Подключаться при запуске телефона</translation>
+    </message>
+    <message>
+        <source>If you were connected before restarting the phone, connect again. Off: stay disconnected until you connect.</source>
+        <translation>Если перед перезагрузкой телефона подключение было включено, оно включится снова. Выключено: без подключения, пока вы не включите его сами.</translation>
+    </message>
+    <message>
         <source>Check that the server responds</source>
         <translation>Проверять, что сервер отвечает</translation>
     </message>

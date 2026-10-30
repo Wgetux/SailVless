@@ -650,6 +650,14 @@
         <translation>可靠性</translation>
     </message>
     <message>
+        <source>Connect when the phone starts</source>
+        <translation>手机启动时连接</translation>
+    </message>
+    <message>
+        <source>If you were connected before restarting the phone, connect again. Off: stay disconnected until you connect.</source>
+        <translation>如果重启手机前处于连接状态，则重新连接。关闭：保持断开，直到你手动连接。</translation>
+    </message>
+    <message>
         <source>Check that the server responds</source>
         <translation>检查服务器是否响应</translation>
     </message>

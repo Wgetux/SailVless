@@ -15,7 +15,7 @@ import (
 	"sailvless/internal/store"
 )
 
-var version = "1.0.9"
+var version = "1.1.0"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ctl" {
@@ -58,7 +58,20 @@ func run() error {
 	svc.Logs.Add("sailvlessd: ", fmt.Sprintf("%s started, cores in %s", version, svc.CoreDir))
 	svc.Notify = dbusapi.Notifier(conn) // before any goroutine may notify
 
-	if set := st.Settings(); set.Connected && set.SelectedID != "" {
+	// the runtime directory is a tmpfs: the mark tells a restarted daemon from
+	// a phone start
+	mark := filepath.Join(svc.RuntimeDir, "started")
+	_, markErr := os.Stat(mark)
+	_ = os.WriteFile(mark, nil, 0o600)
+	set := st.Settings()
+	if set.Connected && !set.ConnectOnBoot && markErr != nil {
+		svc.Logs.Add("sailvlessd: ", "phone started, not connecting (off in settings)")
+		set.Connected = false
+		if err := st.SetSettings(set); err != nil {
+			return err
+		}
+	}
+	if set.Connected && set.SelectedID != "" {
 		svc.Logs.Add("sailvlessd: ", "restoring the connection")
 		go func() {
 			if err := svc.Connect(""); err != nil {

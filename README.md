@@ -37,7 +37,7 @@ Free software under the GNU GPL v3 or later. Tested on a OnePlus 6T with Sailfis
 - **Local proxy:** SOCKS5 and HTTP on 127.0.0.1 only, login and password (random, on by default), fixed or random
   ports; opening it to the LAN needs an explicit switch with a warning.
 - **TUN mode:** all traffic of the device through the tunnel without configuring apps; survives Wi-Fi ↔ mobile data
-  switches; on failures the network falls back to direct instead of breaking. Shows up as the system VPN
+  switches; can connect when the phone starts (a switch in Settings); on failures the network falls back to direct instead of breaking. Shows up as the system VPN
   "SailVless": status bar icon, Settings → VPN and the top menu switch.
 - **Interface:** Silica, cover with state and a button, ping and "fastest server", speed and traffic, logs with copy,
   notifications about a lost connection and the device limit. English, Russian and Simplified Chinese.
@@ -74,9 +74,10 @@ Kernel 4.9 has no UID routing rules, so the proxy core's own traffic is told apa
 
 - the core's sockets get `SO_MARK`; a `fwmark → main` rule sits before the tunnel rules and `fwmark → unreachable`
   keeps marked traffic from falling into the tunnel;
-- replies get the mark back through CONNMARK, `src_valid_mark=1` keeps a strict `rp_filter` on `wlan0` happy;
-- the LAN is excluded from the tunnel (the phone stays reachable), but DNS queries to the router are redirected into
-  the tunnel (otherwise the provider would see them); DNS to private IPv6 addresses is refused (no IPv6 NAT in the kernel);
+- replies get the mark back through CONNMARK with `src_valid_mark=1`; `rp_filter` is loose while the tunnel is up, so
+  sockets bound to the uplink (the system's online check) work too;
+- the LAN is excluded from the tunnel (the phone stays reachable), but DNS queries to the router are routed into
+  the tunnel by a mark (otherwise the provider would see them); DNS to private IPv6 addresses is refused (no IPv6 NAT in the kernel);
 - IPv6 is always captured: refused by default (apps get IPv4 addresses only) or proxied if enabled;
 - server addresses are resolved through the system DNS before the tunnel goes up, which also works with operator
   whitelists;

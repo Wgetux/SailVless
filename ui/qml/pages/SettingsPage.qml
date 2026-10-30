@@ -82,6 +82,13 @@ Page {
             SectionHeader { text: qsTr("Reliability") }
 
             TextSwitch {
+                text: qsTr("Connect when the phone starts")
+                description: qsTr("If you were connected before restarting the phone, connect again. Off: stay disconnected until you connect.")
+                checked: !!page.settings.connectOnBoot
+                automaticCheck: false
+                onClicked: page.patch({ connectOnBoot: !checked })
+            }
+            TextSwitch {
                 text: qsTr("Check that the server responds")
                 description: qsTr("Every 2 minutes while the screen is on, a tiny request goes through the server. If it fails twice, the connection is restarted; if that does not help, you get a notification.")
                 checked: !!page.settings.healthCheck

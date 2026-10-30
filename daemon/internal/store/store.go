@@ -20,13 +20,16 @@ import (
 )
 
 type Settings struct {
-	SelectedID  string `json:"selectedId"`
-	Connected   bool   `json:"connected"` // user wants the tunnel up; restored on daemon start
-	Listen      string `json:"listen"`
-	SocksPort   int    `json:"socksPort"`
-	HTTPPort    int    `json:"httpPort"`
-	AuthEnabled bool   `json:"authEnabled"`
-	LogLevel    string `json:"logLevel"`
+	SelectedID string `json:"selectedId"`
+	Connected  bool   `json:"connected"` // user wants the tunnel up; restored on daemon start
+	// bring that connection back when the phone starts too (a restarted
+	// daemon, e.g. after a package update, restores it anyway)
+	ConnectOnBoot bool   `json:"connectOnBoot"`
+	Listen        string `json:"listen"`
+	SocksPort     int    `json:"socksPort"`
+	HTTPPort      int    `json:"httpPort"`
+	AuthEnabled   bool   `json:"authEnabled"`
+	LogLevel      string `json:"logLevel"`
 
 	TunMode bool `json:"tunMode"` // route all device traffic through the root TUN helper
 	// proxy IPv6 inside the tunnel (else reject it and hand out IPv4 only);
@@ -107,7 +110,7 @@ func Open(dir string) (*Store, error) {
 		profiles: map[string]*link.Profile{},
 		subs:     map[string]*Subscription{},
 		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning",
-			UserAgent: DefaultUserAgent, HWIDEnabled: true,
+			UserAgent: DefaultUserAgent, HWIDEnabled: true, ConnectOnBoot: true,
 			BootstrapDNS: "1.1.1.1", HealthCheck: true, RemoteDNS: "1.1.1.1", Routing: routing.Default()},
 	}
 	var list []*link.Profile
