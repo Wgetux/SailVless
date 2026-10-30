@@ -275,6 +275,28 @@ Page {
 
             SectionHeader { text: qsTr("About") }
             DetailItem { label: qsTr("Version"); value: appVersion }
+            DetailItem { label: qsTr("License"); value: "GNU GPL v3+" }
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * x
+                wrapMode: Text.Wrap
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+                text: qsTr("Free software: you may share and change it under the GNU GPL v3 or later. Source code:")
+            }
+            BackgroundItem {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                onClicked: Qt.openUrlExternally("https://github.com/Wgetux/SailVless")
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * x
+                    truncationMode: TruncationMode.Fade
+                    color: parent.highlighted ? Theme.highlightColor : Theme.primaryColor
+                    text: "github.com/Wgetux/SailVless"
+                }
+            }
         }
 
         VerticalScrollDecorator { }

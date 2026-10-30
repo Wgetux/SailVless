@@ -202,5 +202,7 @@
   "Updated %1": "更新于 %1",
   "No subscriptions": "没有订阅",
   "Pull down to add one": "下拉以添加",
-  "Add a server first": "请先添加服务器"
+  "Add a server first": "请先添加服务器",
+  "License": "许可证",
+  "Free software: you may share and change it under the GNU GPL v3 or later. Source code:": "自由软件：你可以依据 GNU GPL 第 3 版或更新版本分享和修改它。源代码："
 }

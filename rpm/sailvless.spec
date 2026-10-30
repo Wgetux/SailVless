@@ -1,10 +1,11 @@
 Name:       sailvless
-Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC proxy client
-Version:    0.12.0
+Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC / AmneziaWG proxy client
+Version:    1.0.0
 Release:    1
-# own code + bundled cores: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later)
-License:    MPL-2.0 AND GPL-3.0-or-later
-URL:        https://github.com/XTLS/Xray-core
+# own code: GPL-3.0-or-later; bundled: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later),
+# amneziawg-go (MIT), gVisor and btree (Apache-2.0), godbus (BSD-2-Clause), golang.org/x (BSD-3-Clause)
+License:    GPL-3.0-or-later AND MPL-2.0 AND MIT AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause
+URL:        https://github.com/Wgetux/SailVless
 
 # Go binaries are static, prebuilt and stripped by build.ps1
 %define debug_package %{nil}
@@ -60,6 +61,8 @@ install -D -m 644 dbus/org.sailvless.Tun.conf %{buildroot}%{_sysconfdir}/dbus-1/
 install -D -m 644 dbus/org.sailvless.Tun.system.service %{buildroot}%{_datadir}/dbus-1/system-services/org.sailvless.Tun.service
 install -D -m 755 connman/sailvless.so %{buildroot}%{_libdir}/connman/plugins-vpn/sailvless.so
 install -D -m 644 connman/sailfish-vpn/details.qml %{buildroot}%{_datadir}/sailfish-vpn/sailvless/details.qml
+mkdir -p %{buildroot}%{_datadir}/licenses/sailvless
+install -m 644 licenses/*.txt %{buildroot}%{_datadir}/licenses/sailvless/
 
 %post
 systemctl daemon-reload || :
@@ -97,3 +100,4 @@ systemctl-user daemon-reload || :
 %{_datadir}/dbus-1/system-services/org.sailvless.Tun.service
 %{_libdir}/connman/plugins-vpn/sailvless.so
 %{_datadir}/sailfish-vpn/sailvless
+%{_datadir}/licenses/sailvless

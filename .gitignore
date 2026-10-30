@@ -13,3 +13,6 @@ secrets*.json
 # editors
 .vscode/
 *.user
+
+# personal notes for AI assistants
+CLAUDE.local.md

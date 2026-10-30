@@ -208,5 +208,7 @@
   "Cancel selection": "Отменить выбор",
   "Select all": "Выбрать все",
   "Delete selected (%1)": "Удалить выбранные (%1)",
-  "Select rules": "Выбрать правила"
+  "Select rules": "Выбрать правила",
+  "License": "Лицензия",
+  "Free software: you may share and change it under the GNU GPL v3 or later. Source code:": "Свободная программа: её можно распространять и изменять на условиях GNU GPL v3 или более поздней. Исходный код:"
 }

@@ -817,6 +817,14 @@
         <source>Version</source>
         <translation>Версия</translation>
     </message>
+    <message>
+        <source>License</source>
+        <translation>Лицензия</translation>
+    </message>
+    <message>
+        <source>Free software: you may share and change it under the GNU GPL v3 or later. Source code:</source>
+        <translation>Свободная программа: её можно распространять и изменять на условиях GNU GPL v3 или более поздней. Исходный код:</translation>
+    </message>
 </context>
 <context>
     <name>SubscriptionPage</name>

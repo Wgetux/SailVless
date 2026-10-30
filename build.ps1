@@ -56,7 +56,7 @@ if ($Rpm) {
     # The SDK build engine only sees its workspace (the user profile), so the
     # sources are mirrored there and built in place.
     $shadow = Join-Path $env:USERPROFILE '.sailvless-build'
-    foreach ($d in 'rpm', 'ui', 'systemd', 'dbus', 'connman') {
+    foreach ($d in 'rpm', 'ui', 'systemd', 'dbus', 'connman', 'licenses') {
         robocopy (Join-Path $root $d) (Join-Path $shadow $d) /MIR /NFL /NDL /NJH /NJS /NP /XD .qmake.stash | Out-Null
         if ($LASTEXITCODE -ge 8) { throw "robocopy $d failed" }
     }

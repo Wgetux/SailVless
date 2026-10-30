@@ -1,130 +1,142 @@
 # SailVless
 
-Прокси-клиент для Sailfish OS в духе v2rayNG/Happ: подписки, список серверов с пингом, одна кнопка «Подключить»,
-локальный SOCKS5/HTTP с паролем и системный VPN-режим (TUN) для всего трафика устройства.
+**English** | [Русский](README.ru.md) | [简体中文](README.zh-CN.md)
 
-Проверено на OnePlus 6T, Sailfish OS 5.1.0.11 (aarch64, ядро 4.9, Qt 5.6).
+A native proxy and VPN client for Sailfish OS: subscriptions, a server list with ping, one "Connect" button,
+a local SOCKS5/HTTP proxy with a password and a system-wide VPN mode (TUN) for all traffic of the device.
+VLESS (REALITY, Vision, XHTTP), VMess, Trojan, Shadowsocks, Hysteria2, TUIC and AmneziaWG.
 
-## Возможности
+Free software under the GNU GPL v3 or later. Tested on a OnePlus 6T with Sailfish OS 5.1.0.11 (aarch64, kernel 4.9, Qt 5.6).
 
-- **Протоколы:** VLESS (REALITY, Vision, XHTTP), VMess, Trojan, Shadowsocks (включая 2022) — ядро Xray;
-  Hysteria2 (перескок портов, salamander) и TUIC — ядро sing-box. Ядро выбирается автоматически.
-- **Транспорты:** TCP (в т.ч. HTTP-маскировка), WebSocket, gRPC, HTTPUpgrade, XHTTP; TLS / REALITY, uTLS-fingerprint, SNI, ALPN.
-- **AmneziaWG** (и обычный WireGuard): конфиг `.conf` или ссылка AmneziaVPN `vpn://`; параметры обфускации
-  AWG 1.0/1.5/2.0 (Jc, Jmin, Jmax, S1–S4, H1–H4, I1–I5). Работает в userspace (официальная библиотека amneziawg-go
-  и сетевой стек gVisor) без своего TUN и без root: `sailvless-awg` отдаёт туннель как SOCKS5, а Xray подключается
-  к нему, поэтому маршрутизация, локальный прокси, TUN-режим и проверка живости работают и для AWG.
-- **Импорт:** ссылки `vless:// vmess:// trojan:// ss:// hysteria2:// hy2:// tuic:// vpn://` из буфера или вручную,
-  полный JSON-конфиг Xray или sing-box, конфиг AmneziaWG/WireGuard.
-- **Подписки:** base64, список ссылок, Xray JSON (массив конфигов), sing-box JSON; заголовки `subscription-userinfo`
-  (трафик и срок), `profile-title` (в т.ч. `base64:`), `profile-update-interval`, `support-url`, `announce`;
-  автообновление; обновление через туннель, если панель заблокирована.
-- **HWID для Remnawave:** `x-hwid` (стабильный: SHA-256 от machine-id и соли, сам machine-id не передаётся),
-  `x-device-os`, `x-ver-os`, `x-device-model`, свой User-Agent; HWID можно посмотреть, сбросить или задать вручную;
-  понятное сообщение при превышении лимита устройств.
-- **Маршрутизация:** всё через прокси / обход локальной сети и страны (для `ru` — российские сервисы, .ru/.su/.рф,
-  российские IP) / только свои правила; блокировка рекламы; свои правила по домену, суффиксу, подстроке, IP/подсети,
-  geosite, geoip с действиями «прокси / напрямую / блок».
-- **DNS:** отдельно через прокси (DoH, TCP, UDP) и для прямых сайтов; в TUN-режиме DNS не утекает мимо туннеля.
-- **Локальный прокси:** SOCKS5 и HTTP только на 127.0.0.1, логин и пароль (случайные, включены по умолчанию),
-  настраиваемые или случайные порты; открыть в локальную сеть можно только явным переключателем с предупреждением.
-- **TUN-режим:** весь трафик устройства через туннель без настройки приложений; переживает переключение
-  Wi-Fi ↔ LTE; при сбоях сеть возвращается в прямой режим, а не обрывается.
-- **Интерфейс:** Silica, обложка с состоянием и кнопкой, пинг и «самый быстрый сервер», скорость и трафик,
-  логи с копированием, русский и английский языки, уведомления о потере соединения и лимите устройств.
+## Features
 
-## Установка
+- **Protocols:** VLESS (REALITY, Vision, XHTTP), VMess, Trojan, Shadowsocks (including 2022) on the Xray core;
+  Hysteria2 (port hopping, salamander) and TUIC on sing-box. The core is chosen automatically.
+- **Transports:** TCP (including HTTP obfuscation), WebSocket, gRPC, HTTPUpgrade, XHTTP; TLS / REALITY, uTLS
+  fingerprints, SNI, ALPN.
+- **AmneziaWG** (and plain WireGuard): `.conf` files or AmneziaVPN `vpn://` links; obfuscation of AWG 1.0/1.5/2.0
+  (Jc, Jmin, Jmax, S1–S4, H1–H4, I1–I5) and AWG 3.1 (HeaderProtectionKey, ContentPaddingAddition, RandomTrailers,
+  DisableCookies). Runs in user space (the official amneziawg-go library and the gVisor network stack) without its
+  own TUN device and without root: `sailvless-awg` exposes the tunnel as SOCKS5 and Xray chains to it, so routing,
+  the local proxy, the TUN mode and the liveness check work for AmneziaWG too. Split configs (AllowedIPs) are honored.
+- **Import:** `vless:// vmess:// trojan:// ss:// hysteria2:// hy2:// tuic:// vpn://` links from the clipboard or typed in,
+  full Xray or sing-box JSON configs, AmneziaWG/WireGuard configs (pasted or picked as files).
+- **Subscriptions:** base64, plain link lists, Xray JSON (array of configs), sing-box JSON; the headers
+  `subscription-userinfo` (traffic and expiry), `profile-title` (also `base64:`), `profile-update-interval`,
+  `support-url`, `announce`; automatic updates; updates through the tunnel when the panel is blocked.
+- **HWID for Remnawave panels:** `x-hwid` (stable: SHA-256 of machine-id and a salt, machine-id itself is never sent),
+  `x-device-os`, `x-ver-os`, `x-device-model`, a custom User-Agent; the HWID can be viewed, reset or set by hand;
+  a clear message when the device limit is reached.
+- **Routing:** everything through the proxy / bypass the LAN and a country (`cn`: Chinese services and IP ranges,
+  `ru`: Russian services, .ru/.su/.рф and IP ranges; other codes: the TLD and IP ranges) / only your own rules;
+  ad blocking; rules by domain, suffix, keyword, IP/subnet, geosite, geoip with "proxy / direct / block".
+- **Rules per server**, checked before the common ones (e.g. some sites direct only with a full-tunnel server);
+  rules can be exported to and imported from files, selected and deleted in bulk.
+- **DNS:** separate servers through the proxy (DoH, TCP, UDP) and for direct sites; in TUN mode DNS never leaks
+  around the tunnel.
+- **Local proxy:** SOCKS5 and HTTP on 127.0.0.1 only, login and password (random, on by default), fixed or random
+  ports; opening it to the LAN needs an explicit switch with a warning.
+- **TUN mode:** all traffic of the device through the tunnel without configuring apps; survives Wi-Fi ↔ mobile data
+  switches; on failures the network falls back to direct instead of breaking. Shows up as the system VPN
+  "SailVless": status bar icon, Settings → VPN and the top menu switch.
+- **Interface:** Silica, cover with state and a button, ping and "fastest server", speed and traffic, logs with copy,
+  notifications about a lost connection and the device limit. English, Russian and Simplified Chinese.
 
-Пакет ставится от root (сайдлоад, не Harbour):
+## Installation
+
+The package is side-loaded (not from Harbour) and installed as root:
 
 ```sh
-devel-su rpm -U sailvless-<версия>.aarch64.rpm
+devel-su pkcon install-local sailvless-<version>.aarch64.rpm
 ```
 
-После установки демон запускается автоматически в сессии пользователя. Приложение — «SailVless» в списке приложений.
+The daemon starts in the user session right away. The app is "SailVless" in the app grid.
+Do not run another VPN client with its own tunnel (e.g. harbour-xhvpn) at the same time.
 
-## Как это устроено
+## How it works
 
 ```
-QML/Silica UI ──session D-Bus──► sailvlessd (systemd --user, от пользователя)
-                                   ├ профили, подписки, HWID, маршрутизация, гео-базы
-                                   ├ режим прокси: сам запускает xray / sing-box (+ sailvless-awg для AmneziaWG)
-                                   └──system D-Bus──► sailvless-tun-helper (root, запускается по требованию)
-                                                       ├ ядро — от имени пользователя, только CAP_NET_ADMIN
-                                                       └ sing-box TUN (свой конфиг, от root)
+QML/Silica UI ──session D-Bus──► sailvlessd (systemd --user, runs as the user)
+                                   ├ profiles, subscriptions, HWID, routing, geo databases
+                                   ├ proxy mode: runs xray / sing-box itself (+ sailvless-awg for AmneziaWG)
+                                   └──system D-Bus──► sailvless-tun-helper (root, started on demand)
+                                                       ├ the core runs as the user, with CAP_NET_ADMIN only
+                                                       └ sing-box TUN (its own config, as root)
+connman-vpnd ◄── sailvless.so plugin: mirrors the tunnel as the system VPN (no routes or DNS changes)
 ```
 
-Данные: `~/.local/share/sailvless/` (каталог 0700). Ссылки подписок, UUID и пароли лежат только в `secrets.json` (0600);
-в логах и интерфейсе URL подписки маскируется. Гео-базы — `~/.local/share/sailvless/geo`.
+Data lives in `~/.local/share/sailvless/` (directory 0700). Subscription URLs, UUIDs and passwords are kept only in
+`secrets.json` (0600); subscription URLs are masked in logs and in the UI. Geo databases: `~/.local/share/sailvless/geo`.
 
-### TUN-режим
+### TUN mode
 
-В ядре 4.9 нет правил маршрутизации по UID, поэтому трафик самого прокси-ядра отделяется меткой:
+Kernel 4.9 has no UID routing rules, so the proxy core's own traffic is told apart by a mark:
 
-- сокеты ядра помечаются `SO_MARK`; правило `fwmark → main` стоит перед правилами туннеля,
-  а `fwmark → unreachable` не даёт помеченному трафику провалиться в туннель;
-- ответы возвращают метку через CONNMARK, `src_valid_mark=1` — чтобы строгий `rp_filter` на `wlan0` их принимал;
-- локальная сеть исключена из туннеля (телефон доступен из LAN), но DNS-запросы к роутеру перенаправляются
-  в туннель (иначе провайдер видел бы запросы); DNS к частным IPv6-адресам отклоняется — NAT для IPv6 в ядре нет;
-- IPv6 всегда перехватывается: по умолчанию отклоняется (приложения получают только IPv4-адреса),
-  по желанию — проксируется;
-- адреса серверов демон узнаёт до включения туннеля через системный DNS — это работает и при белых списках оператора;
-- при смене сети перезапускается только ядро, туннель остаётся — окна для утечки нет.
+- the core's sockets get `SO_MARK`; a `fwmark → main` rule sits before the tunnel rules and `fwmark → unreachable`
+  keeps marked traffic from falling into the tunnel;
+- replies get the mark back through CONNMARK, `src_valid_mark=1` keeps a strict `rp_filter` on `wlan0` happy;
+- the LAN is excluded from the tunnel (the phone stays reachable), but DNS queries to the router are redirected into
+  the tunnel (otherwise the provider would see them); DNS to private IPv6 addresses is refused (no IPv6 NAT in the kernel);
+- IPv6 is always captured: refused by default (apps get IPv4 addresses only) or proxied if enabled;
+- server addresses are resolved through the system DNS before the tunnel goes up, which also works with operator
+  whitelists;
+- on a network change only the core restarts, the tunnel stays, so there is no window for leaks.
 
-Root-хелпер получает команды только от `defaultuser` (политика D-Bus), конфиг TUN строит сам,
-ограничен в systemd (`CapabilityBoundingSet`, `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=read-only`).
-Всё, что он меняет, снимается при отключении, при пропаже демона с шины, при падении хелпера (`ExecStopPost`)
-и при следующем запуске.
+The root helper accepts calls only from `defaultuser` (D-Bus policy), builds the TUN config itself and is confined
+by systemd (`CapabilityBoundingSet`, `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=read-only`). Everything
+it changes is undone on disconnect, when the daemon leaves the bus, when the helper crashes (`ExecStopPost`) and on
+the next start. Installing the package restarts `connman-vpn.service`, so a VPN of another client would go down.
 
-TUN-режим виден системе как VPN «SailVless» (плагин connman-vpnd `sailvless.so`): значок в строке состояния,
-переключатель в Настройки → VPN и в верхнем меню. Плагин только отражает состояние туннеля — маршруты и DNS
-connman не трогает (`SplitRouting`). Включение из системы подключает выбранный сервер в TUN-режиме, выключение —
-отключает. После установки RPM перезапускается `connman-vpn.service` (активный VPN другого клиента при этом упадёт).
+## Limitations
 
-## Ограничения
+- **The Sailfish system proxy** (Settings → Network) has no login and password: with authentication use the TUN mode
+  or set the proxy in the app.
+- **No per-app routing:** kernel 4.9 has neither UID rules nor nftables.
+- **DNS-over-TLS** is not supported by Xray, use DoH.
+- **VLESS without TLS/REALITY** to public addresses is refused by Xray v26 (its policy, cannot be overridden).
+- **`pinSHA256`** in Hysteria2 links is not supported by sing-box; it is ignored with a warning in the log.
+- **Hysteria2/TUIC routing** uses SagerNet rule sets that sing-box downloads itself; their integrity relies on HTTPS
+  only. Hysteria2 and TUIC were not tested against real servers.
+- **AmneziaWG:** only AmneziaWG is taken from `vpn://` links (OpenVPN/Cloak/XRay containers of Amnezia are not
+  supported). No ping for AWG servers (UDP); the liveness check through the tunnel tells whether they work.
+  With split configs a server may forward only its own list of networks, so "through the proxy" rules cannot add
+  other sites there.
+- **Waydroid:** the tunnel rules cover forwarded container traffic too, but forwarding is not enabled and was not tested.
 
-- **Системный прокси Sailfish** (Настройки → Сеть) не умеет логин и пароль — с авторизацией используйте TUN-режим
-  или указывайте прокси в приложении.
-- **Нет раздельной маршрутизации по приложениям:** в ядре 4.9 нет правил по UID и nftables.
-- **DNS-over-TLS** не поддерживается Xray — используйте DoH.
-- **VLESS без TLS/REALITY** к публичным адресам Xray v26 отказывается запускать (его решение, обойти нельзя).
-- **`pinSHA256`** в ссылках Hysteria2 sing-box не поддерживает — игнорируется с предупреждением в логе.
-- **Маршрутизация для Hysteria2/TUIC** использует rule-set'ы SagerNet, которые sing-box скачивает сам;
-  их целостность защищена только HTTPS. Hysteria2/TUIC на реальном сервере не проверялись (не было серверов).
-- **Не включайте одновременно другой VPN** (например, harbour-xhvpn).
-- **AmneziaWG:** проверены импорт, запуск и цепочка в обоих режимах; рукопожатие с настоящим сервером
-  ещё не проверялось. Из ссылок `vpn://` берётся только AmneziaWG (OpenVPN/Cloak/XRay-контейнеры Amnezia
-  не поддерживаются). Пинг для AWG не показывается (UDP); о живости говорит проверка через туннель.
-- **Waydroid:** правила туннеля охватывают и пересылаемый трафик контейнеров, но форвардинг не включается
-  и не проверялся.
+## Building
 
-## Сборка
-
-Нужны Windows, Go 1.27+, Sailfish SDK 3.13+ (сборочный движок Docker, target `SailfishOS-5.1.0.11-aarch64`).
+Needs Windows, Go 1.27+, Sailfish SDK 3.13+ (Docker build engine, target `SailfishOS-5.1.0.11-aarch64`).
 
 ```powershell
-.\build.ps1 -Cores          # один раз: Xray и sing-box из официальных исходников по тегам из cores\versions.lock
-.\build.ps1 -Test -Rpm      # тесты, Go-бинарники (linux/arm64), RPM через sfdk -> out\rpm
-.\deploy.ps1 -Rpm -RootDevice root@<ip>   # установка по SSH-ключу root
+.\build.ps1 -Cores          # once: Xray and sing-box from official sources at the tags in cores\versions.lock
+.\build.ps1 -Test -Rpm      # tests, Go binaries (linux/arm64), RPM through sfdk -> out\rpm
+.\deploy.ps1 -Rpm -RootDevice root@<phone>   # install over SSH with a root key
 ```
 
-Ядра собираются только из официальных репозиториев с закреплённым коммитом и `go mod verify`.
-Подробности для разработки — в [CLAUDE.md](CLAUDE.md).
+The cores are built only from the official repositories at pinned commits, with `go mod verify`.
+Development notes: [CLAUDE.md](CLAUDE.md). Translations: `ui/translations/*.json`; the build fails on any
+untranslated string, so a new text needs an entry in `ru.json` and `zh_CN.json` (plurals also in `en.json`).
+New translations are welcome.
 
-## Отладка
+## Debugging
 
 ```sh
-sailvlessd ctl status        # состояние, трафик
-sailvlessd ctl logs 200      # логи демона, ядра и TUN-хелпера
-sailvlessd ctl list          # серверы
-sailvlessd ctl ping          # TCP-пинг всех серверов
-sailvlessd ctl settings      # настройки (JSON); изменить: ctl settings '{"logLevel":"debug"}'
-sailvlessd ctl hwid          # HWID и заголовки устройства
+sailvlessd ctl status        # state, traffic
+sailvlessd ctl logs 200      # logs of the daemon, the core and the TUN helper
+sailvlessd ctl list          # servers
+sailvlessd ctl ping          # TCP ping of all servers
+sailvlessd ctl settings      # settings (JSON); change: ctl settings '{"logLevel":"debug"}'
+sailvlessd ctl rules <id>    # a server's own rules; rules-export / rules-import for files
+sailvlessd ctl hwid          # HWID and device headers
 curl -x "$(sailvlessd ctl proxy-url)" https://ifconfig.me
 ```
 
-## Лицензии
+## License
 
-В пакет входят Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later) и, в составе `sailvless-awg`,
-amneziawg-go (MIT) с gVisor (Apache-2.0). Лицензию для собственного кода проекта
-владелец ещё не выбрал.
+SailVless is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE).
+
+The package also contains Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later) and, inside `sailvless-awg`, amneziawg-go
+(MIT) with gVisor (Apache-2.0); see [THIRD-PARTY.md](THIRD-PARTY.md). SailVless is not affiliated with the Xray,
+sing-box or Amnezia projects.

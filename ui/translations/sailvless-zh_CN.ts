@@ -813,6 +813,14 @@
         <source>Version</source>
         <translation>版本</translation>
     </message>
+    <message>
+        <source>License</source>
+        <translation>许可证</translation>
+    </message>
+    <message>
+        <source>Free software: you may share and change it under the GNU GPL v3 or later. Source code:</source>
+        <translation>自由软件：你可以依据 GNU GPL 第 3 版或更新版本分享和修改它。源代码：</translation>
+    </message>
 </context>
 <context>
     <name>SubscriptionPage</name>
