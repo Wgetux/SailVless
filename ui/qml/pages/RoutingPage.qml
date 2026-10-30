@@ -10,6 +10,7 @@ Page {
     readonly property var modes: ["global", "bypass", "custom"]
     property bool selecting: false
     property var marked: ({})      // rule key -> true: selected / waiting to be deleted
+    property bool restarting: false // the remorse is restarted, not canceled by the user
     property bool saving: false
     property var pending: null     // routing to save once the running save is done
 
@@ -81,12 +82,17 @@ Page {
         var n = markedCount()
         if (n === 0)
             return
+        // a new candidate restarts the countdown; that cancel must keep the marks
+        page.restarting = true
+        if (remorse.visible)
+            remorse.cancel()
         remorse.execute(qsTr("Deleting %n rule(s)", "", n), function () {
             var m = page.marked
             page.marked = ({})
             page.selecting = false
             page.save({ rules: page.routing.rules.filter(function (r) { return !m[page.key(r)] }) })
         })
+        page.restarting = false
     }
 
     function ruleText(r) {
@@ -104,7 +110,7 @@ Page {
 
     RemorsePopup {
         id: remorse
-        onCanceled: page.marked = ({})
+        onCanceled: if (!page.restarting) page.marked = ({})
     }
 
     Component.onCompleted: load()
