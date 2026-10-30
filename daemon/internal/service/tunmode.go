@@ -161,6 +161,9 @@ func (s *Service) WatchSystemVPN() {
 // systemVPNRequest acts on the system VPN switch: on means the selected
 // server in TUN mode (the only mode the system shows as a VPN).
 func (s *Service) systemVPNRequest(action string) {
+	// one at a time: repeated requests then see the tunnel already coming up
+	s.sysVPNMu.Lock()
+	defer s.sysVPNMu.Unlock()
 	s.mu.Lock()
 	tunOn, st := s.tunActive, s.tunState.State
 	s.mu.Unlock()

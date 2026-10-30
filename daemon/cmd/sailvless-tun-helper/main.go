@@ -46,7 +46,8 @@ type helper struct {
 	owner    string       // unique bus name of the caller that started the tunnel
 	lastUsed time.Time
 
-	lastState string // last emitted state, to notice the tunnel coming up
+	lastState  string // last emitted state, to notice the tunnel coming up
+	restarting bool   // Start is replacing the tunnel: "stopped" in between is not news
 }
 
 type status struct {
@@ -141,6 +142,12 @@ func serve() error {
 
 func (h *helper) emit() {
 	st := h.status()
+	h.mu.Lock()
+	quiet := h.restarting && st.State == "stopped"
+	h.mu.Unlock()
+	if quiet {
+		return
+	}
 	b, _ := json.Marshal(st)
 	_ = h.conn.Emit(tun.Path, tun.Interface+".StateChanged", string(b))
 	h.mu.Lock()
@@ -230,6 +237,17 @@ func (h *helper) Start(paramsJSON string, sender dbus.Sender) *dbus.Error {
 	if p.AssetDir != "" && !strings.HasPrefix(filepath.Clean(p.AssetDir)+"/", filepath.Clean(home)+"/") {
 		return dbusErr(errors.New("asset dir must be inside the caller's home"))
 	}
+	// connman takes "stopped" as the VPN going down; a restart is not that
+	h.mu.Lock()
+	h.restarting = true
+	h.lastState = "" // re-check the system VPN once the new tunnel is up
+	h.mu.Unlock()
+	defer func() {
+		h.mu.Lock()
+		h.restarting = false
+		h.mu.Unlock()
+		h.emit()
+	}()
 	h.stop()
 	h.mu.Lock()
 	h.lastUsed = time.Now()

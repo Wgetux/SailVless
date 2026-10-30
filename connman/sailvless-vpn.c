@@ -38,6 +38,7 @@ static vpn_provider_connect_cb_t pending_cb;
 static void *pending_data;
 static guint timeout_id;
 static gboolean ready;
+static gint64 last_request;            /* monotonic time of the last RequestConnect */
 
 static void call_helper(const char *method)
 {
@@ -156,10 +157,15 @@ static int sv_connect(struct vpn_provider *provider, struct connman_task *task,
 	}
 
 	/* started from the system UI: the helper asks the SailVless daemon */
+	finish_pending(-ECANCELED); /* a stale attempt, if any */
 	pending_cb = cb;
 	pending_data = user_data;
 	timeout_id = g_timeout_add_seconds(CONNECT_TIMEOUT_S, connect_timeout, NULL);
-	call_helper("RequestConnect");
+	/* connmand may retry quickly; one request is enough while it is in flight */
+	if (g_get_monotonic_time() - last_request > 3 * G_USEC_PER_SEC) {
+		last_request = g_get_monotonic_time();
+		call_helper("RequestConnect");
+	}
 	return -EINPROGRESS;
 }
 

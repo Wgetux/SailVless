@@ -53,6 +53,7 @@ type Service struct {
 
 	tunConn   *dbus.Conn
 	tunConnMu sync.Mutex // serializes opening tunConn
+	sysVPNMu  sync.Mutex // serializes system VPN switch requests
 	tunActive bool
 	tunState  tunStatus
 	tunLostAt time.Time
