@@ -31,6 +31,15 @@ func (h *helper) RequestConnect() *dbus.Error {
 }
 
 func (h *helper) RequestDisconnect() *dbus.Error {
+	// tearing the tunnel down on exit makes connman-vpnd report a disconnect:
+	// that is not the user either, the daemon brings the new helper up
+	h.mu.Lock()
+	exiting := h.exiting
+	h.mu.Unlock()
+	if exiting {
+		h.logs.Add("helper: ", "exiting, keeping the system VPN switch on")
+		return nil
+	}
 	// connman-vpnd disconnects every VPN when it stops (package update, phone
 	// shutdown): that is not the user switching SailVless off
 	if st := h.unitState("connman-vpn.service"); st == "deactivating" || st == "inactive" {

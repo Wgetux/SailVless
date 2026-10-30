@@ -30,7 +30,16 @@ Page {
         return kinds[r.kind] + " " + r.value + "  →  " + actions[r.action]
     }
 
+    function removeRule(rule) {
+        var rules = page.rules.filter(function (r) {
+            return !(r.kind === rule.kind && r.value === rule.value && r.action === rule.action)
+        })
+        page.save(rules)
+    }
+
     Component.onCompleted: load()
+    // e.g. back from the file picker after an import
+    onStatusChanged: if (status === PageStatus.Active) load()
 
     RulesFile {
         id: rulesFile
@@ -124,12 +133,10 @@ Page {
                         MenuItem {
                             text: qsTr("Delete")
                             onClicked: {
-                                var i = index
-                                ruleItem.remorseDelete(function () {
-                                    var rules = page.rules.slice(0)
-                                    rules.splice(i, 1)
-                                    page.save(rules)
-                                })
+                                // the delegate may be gone when the remorse fires (the list
+                                // was redrawn): keep the page and the rule itself
+                                var pg = page, rule = modelData
+                                ruleItem.remorseDelete(function () { pg.removeRule(rule) })
                             }
                         }
                     }

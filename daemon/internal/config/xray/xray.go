@@ -42,7 +42,8 @@ type Options struct {
 func directOutbound(ipv4Only bool) obj {
 	ob := obj{"tag": "direct", "protocol": "freedom"}
 	if ipv4Only {
-		ob["settings"] = obj{"domainStrategy": "UseIPv4"}
+		// sockopt: freedom's own domainStrategy is deprecated since Xray v26
+		ob["streamSettings"] = obj{"sockopt": obj{"domainStrategy": "UseIPv4"}}
 	}
 	return ob
 }

@@ -21,8 +21,11 @@ func TestFinalDirectIsDefaultOutbound(t *testing.T) {
 	}
 	var cfg struct {
 		Outbounds []struct {
-			Tag      string         `json:"tag"`
-			Settings map[string]any `json:"settings"`
+			Tag            string         `json:"tag"`
+			Settings       map[string]any `json:"settings"`
+			StreamSettings struct {
+				Sockopt map[string]any `json:"sockopt"`
+			} `json:"streamSettings"`
 		} `json:"outbounds"`
 		Routing struct {
 			DomainStrategy string           `json:"domainStrategy"`
@@ -35,7 +38,7 @@ func TestFinalDirectIsDefaultOutbound(t *testing.T) {
 	if err := json.Unmarshal(b, &cfg); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Outbounds[0].Tag != "direct" || cfg.Outbounds[0].Settings["domainStrategy"] != "UseIPv4" {
+	if cfg.Outbounds[0].Tag != "direct" || cfg.Outbounds[0].StreamSettings.Sockopt["domainStrategy"] != "UseIPv4" {
 		t.Fatalf("default outbound: %+v", cfg.Outbounds[0])
 	}
 	for _, r := range cfg.Routing.Rules {

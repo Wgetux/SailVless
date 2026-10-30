@@ -48,6 +48,7 @@ type helper struct {
 
 	lastState  string // last emitted state, to notice the tunnel coming up
 	restarting bool   // Start is replacing the tunnel: "stopped" in between is not news
+	exiting    bool   // the helper itself is stopping (e.g. package update)
 }
 
 type status struct {
@@ -146,6 +147,9 @@ func serve() error {
 				return nil // D-Bus activation starts us again on demand
 			}
 		case <-sig:
+			h.mu.Lock()
+			h.exiting = true
+			h.mu.Unlock()
 			h.stop()
 			return nil
 		}
