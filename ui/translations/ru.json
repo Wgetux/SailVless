@@ -199,5 +199,14 @@
   "Export rules to file": "Экспорт правил в файл",
   "Saved to %1": "Сохранено: %1",
   "Rules file": "Файл правил",
-  "Rules added: %1, already there: %2": "Добавлено правил: %1, уже были: %2"
+  "Rules added: %1, already there: %2": "Добавлено правил: %1, уже были: %2",
+  "Deleting %n rule(s)": [
+    "Удаляю %n правило",
+    "Удаляю %n правила",
+    "Удаляю %n правил"
+  ],
+  "Cancel selection": "Отменить выбор",
+  "Select all": "Выбрать все",
+  "Delete selected (%1)": "Удалить выбранные (%1)",
+  "Select rules": "Выбрать правила"
 }

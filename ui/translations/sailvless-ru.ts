@@ -222,6 +222,14 @@
 </context>
 <context>
     <name>ProfileRulesPage</name>
+    <message numerus="yes">
+        <source>Deleting %n rule(s)</source>
+        <translation>
+            <numerusform>Удаляю %n правило</numerusform>
+            <numerusform>Удаляю %n правила</numerusform>
+            <numerusform>Удаляю %n правил</numerusform>
+        </translation>
+    </message>
     <message>
         <source>domain</source>
         <translation>домен</translation>
@@ -245,6 +253,22 @@
     <message>
         <source>block</source>
         <translation>блокировать</translation>
+    </message>
+    <message>
+        <source>Cancel selection</source>
+        <translation>Отменить выбор</translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation>Выбрать все</translation>
+    </message>
+    <message>
+        <source>Delete selected (%1)</source>
+        <translation>Удалить выбранные (%1)</translation>
+    </message>
+    <message>
+        <source>Select rules</source>
+        <translation>Выбрать правила</translation>
     </message>
     <message>
         <source>Import rules from file</source>
@@ -293,6 +317,14 @@
 </context>
 <context>
     <name>RoutingPage</name>
+    <message numerus="yes">
+        <source>Deleting %n rule(s)</source>
+        <translation>
+            <numerusform>Удаляю %n правило</numerusform>
+            <numerusform>Удаляю %n правила</numerusform>
+            <numerusform>Удаляю %n правил</numerusform>
+        </translation>
+    </message>
     <message>
         <source>domain</source>
         <translation>домен</translation>
@@ -316,6 +348,22 @@
     <message>
         <source>block</source>
         <translation>блокировать</translation>
+    </message>
+    <message>
+        <source>Cancel selection</source>
+        <translation>Отменить выбор</translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation>Выбрать все</translation>
+    </message>
+    <message>
+        <source>Delete selected (%1)</source>
+        <translation>Удалить выбранные (%1)</translation>
+    </message>
+    <message>
+        <source>Select rules</source>
+        <translation>Выбрать правила</translation>
     </message>
     <message>
         <source>Import rules from file</source>
