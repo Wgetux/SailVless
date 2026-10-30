@@ -31,9 +31,30 @@ func (h *helper) RequestConnect() *dbus.Error {
 }
 
 func (h *helper) RequestDisconnect() *dbus.Error {
+	// connman-vpnd disconnects every VPN when it stops (package update, phone
+	// shutdown): that is not the user switching SailVless off
+	if st := h.unitState("connman-vpn.service"); st == "deactivating" || st == "inactive" {
+		h.logs.Add("helper: ", "connman-vpnd is "+st+", keeping the tunnel")
+		return nil
+	}
 	h.logs.Add("helper: ", "system VPN switch: disconnect requested")
 	_ = h.conn.Emit(tun.Path, tun.Interface+".Requested", "disconnect")
 	return nil
+}
+
+// unitState returns the ActiveState of a systemd unit ("unknown" on errors).
+func (h *helper) unitState(unit string) string {
+	var path dbus.ObjectPath
+	if err := h.conn.Object("org.freedesktop.systemd1", "/org/freedesktop/systemd1").
+		Call("org.freedesktop.systemd1.Manager.GetUnit", 0, unit).Store(&path); err != nil {
+		return "unknown"
+	}
+	v, err := h.conn.Object("org.freedesktop.systemd1", path).GetProperty("org.freedesktop.systemd1.Unit.ActiveState")
+	if err != nil {
+		return "unknown"
+	}
+	s, _ := v.Value().(string)
+	return s
 }
 
 // connmanProvider returns the object path of our VPN connection, creating it

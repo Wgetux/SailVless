@@ -120,6 +120,12 @@ func (s *Service) LivenessLoop(ctx context.Context) {
 		if last.Unix() >= st.Since && time.Since(last) < probeInterval {
 			continue
 		}
+		// the user may disconnect or switch servers while a probe runs: a
+		// failure of that old session must not bring it back
+		same := func() bool {
+			cur := s.Status()
+			return s.Store.Settings().Connected && cur.ProfileID == st.ProfileID && cur.State != core.Stopped
+		}
 		d, err := s.probe()
 		if err == nil {
 			s.recordProbe(d, nil)
@@ -130,6 +136,9 @@ func (s *Service) LivenessLoop(ctx context.Context) {
 		}
 		if d, err = s.probe(); err == nil {
 			s.recordProbe(d, nil)
+			continue
+		}
+		if !same() {
 			continue
 		}
 		s.recordProbe(0, err)
@@ -146,6 +155,9 @@ func (s *Service) LivenessLoop(ctx context.Context) {
 		if d, err = s.probe(); err == nil {
 			s.recordProbe(d, nil)
 			s.Logs.Add("sailvlessd: ", "server answers again after the restart")
+			continue
+		}
+		if !same() {
 			continue
 		}
 		s.recordProbe(0, err)

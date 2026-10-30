@@ -125,6 +125,18 @@ func serve() error {
 					h.logs.Add("helper: ", "caller left the bus, stopping the tunnel")
 					h.stop()
 				}
+				// connman-vpnd restarted (package update, crash): show the
+				// running tunnel as a system VPN again
+				if name == vpnBus && newOwner != "" && h.status().State == "connected" {
+					go func() {
+						// a fresh connman-vpnd needs a few seconds to pair with connmand
+						time.Sleep(10 * time.Second)
+						if h.status().State == "connected" {
+							h.logs.Add("helper: ", "connman-vpnd restarted, showing the tunnel as a system VPN again")
+							h.connmanConnect()
+						}
+					}()
+				}
 			}
 		case <-idle.C:
 			h.mu.Lock()
