@@ -39,6 +39,7 @@ static void *pending_data;
 static guint timeout_id;
 static gboolean ready;
 static gint64 last_request;            /* monotonic time of the last RequestConnect */
+static guint idle_id;                 /* pending go_idle */
 
 static void call_helper(const char *method)
 {
@@ -69,6 +70,25 @@ static void disconnect_service(struct vpn_provider *provider)
 	if (!conn)
 		return;
 	path = g_strdup_printf("/net/connman/service/vpn_%s", vpn_provider_get_ident(provider));
+
+	/* switched on in Settings, the VPN is kept up by connmand (AutoConnect);
+	 * off in the app means off, so drop that first */
+	msg = dbus_message_new_method_call("net.connman", path, "net.connman.Service", "SetProperty");
+	if (msg) {
+		const char *name = "AutoConnect";
+		dbus_bool_t off = FALSE;
+		DBusMessageIter it, var;
+
+		dbus_message_iter_init_append(msg, &it);
+		dbus_message_iter_append_basic(&it, DBUS_TYPE_STRING, &name);
+		dbus_message_iter_open_container(&it, DBUS_TYPE_VARIANT, DBUS_TYPE_BOOLEAN_AS_STRING, &var);
+		dbus_message_iter_append_basic(&var, DBUS_TYPE_BOOLEAN, &off);
+		dbus_message_iter_close_container(&it, &var);
+		dbus_message_set_no_reply(msg, TRUE);
+		dbus_connection_send(conn, msg, NULL);
+		dbus_message_unref(msg);
+	}
+
 	msg = dbus_message_new_method_call("net.connman", path, "net.connman.Service", "Disconnect");
 	if (msg) {
 		dbus_message_set_no_reply(msg, TRUE);
@@ -85,11 +105,14 @@ static gboolean go_idle(gpointer data)
 {
 	struct vpn_provider *provider = data;
 
+	idle_id = 0;
 	vpn_provider_set_state(provider, VPN_PROVIDER_STATE_IDLE);
 	vpn_provider_unref(provider);
 	return G_SOURCE_REMOVE;
 }
 
+/* err is a negative errno; vpnd's connect callback takes it positive (ECANCELED
+ * means "cancelled", anything it does not know counts as a failed connect) */
 static void finish_pending(int err)
 {
 	if (timeout_id) {
@@ -99,7 +122,7 @@ static void finish_pending(int err)
 	if (pending_cb) {
 		vpn_provider_connect_cb_t cb = pending_cb;
 		pending_cb = NULL;
-		cb(active, pending_data, err);
+		cb(active, pending_data, -err);
 	}
 }
 
@@ -142,6 +165,13 @@ static int sv_connect(struct vpn_provider *provider, struct connman_task *task,
 			const char *if_name, vpn_provider_connect_cb_t cb,
 			const char *dbus_sender, void *user_data)
 {
+	/* connmand may connect again right after a disconnect: IDLE must not land
+	 * on the new attempt (connmand would take it as a failure and retry) */
+	if (idle_id) {
+		g_source_remove(idle_id);
+		idle_id = 0;
+		vpn_provider_unref(provider);
+	}
 	if (active && active != provider)
 		vpn_provider_unref(active);
 	if (active != provider)
@@ -152,7 +182,7 @@ static int sv_connect(struct vpn_provider *provider, struct connman_task *task,
 		/* the tunnel is already running (started from the app) */
 		int err = report_up(provider);
 		if (cb)
-			cb(provider, user_data, err);
+			cb(provider, user_data, -err);
 		return err;
 	}
 
@@ -177,7 +207,9 @@ static void sv_disconnect(struct vpn_provider *provider)
 		call_helper("RequestDisconnect");
 	ready = FALSE;
 	vpn_provider_set_state(provider, VPN_PROVIDER_STATE_DISCONNECT);
-	g_idle_add(go_idle, vpn_provider_ref(provider));
+	if (!idle_id)
+		idle_id = g_idle_add_full(G_PRIORITY_DEFAULT_IDLE, go_idle, vpn_provider_ref(provider),
+					NULL);
 	if (active == provider) {
 		vpn_provider_unref(active);
 		active = NULL;
