@@ -8,20 +8,24 @@ Dialog {
 
     canAccept: text.text.trim().length > 0
 
-    onAccepted: {
-        daemon.call("ImportLinks", [text.text], function (err, result) {
-            if (err) {
-                app.notify(err)
-                return
-            }
-            var r = Util.parse(result, {})
-            var n = r.imported ? r.imported.length : 0
-            var bad = r.errors ? r.errors.length : 0
-            app.notify(bad > 0 ? qsTr("Imported: %1, failed: %2 (%3)").arg(n).arg(bad).arg(r.errors[0])
-                               : qsTr("Imported: %1").arg(n))
+    // a single new profile becomes the selected one: "Connect" then uses it
+    function imported(err, result) {
+        if (err) {
+            app.notify(err)
+            return
+        }
+        var r = Util.parse(result, {})
+        var n = r.imported ? r.imported.length : 0
+        var bad = r.errors ? r.errors.length : 0
+        app.notify(bad > 0 ? qsTr("Imported: %1, failed: %2 (%3)").arg(n).arg(bad).arg(r.errors[0])
+                           : qsTr("Imported: %1").arg(n))
+        if (n === 1)
+            app.run("SelectProfile", [r.imported[0]], app.refreshProfiles)
+        else
             app.refreshProfiles()
-        })
     }
+
+    onAccepted: daemon.call("ImportLinks", [text.text], imported)
 
     SilicaFlickable {
         anchors.fill: parent
@@ -83,18 +87,7 @@ Dialog {
                 var paths = []
                 for (var i = 0; i < selectedContent.count; i++)
                     paths.push(selectedContent.get(i).filePath)
-                daemon.call("ImportFiles", [JSON.stringify(paths)], function (err, result) {
-                    if (err) {
-                        app.notify(err)
-                        return
-                    }
-                    var r = Util.parse(result, {})
-                    var n = r.imported ? r.imported.length : 0
-                    var bad = r.errors ? r.errors.length : 0
-                    app.notify(bad > 0 ? qsTr("Imported: %1, failed: %2 (%3)").arg(n).arg(bad).arg(r.errors[0])
-                                       : qsTr("Imported: %1").arg(n))
-                    app.refreshProfiles()
-                })
+                daemon.call("ImportFiles", [JSON.stringify(paths)], dialog.imported)
             }
         }
     }
