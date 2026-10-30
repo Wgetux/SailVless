@@ -51,7 +51,7 @@ type Settings struct {
 	HWIDManual  string `json:"hwidManual"` // overrides the computed HWID when set
 }
 
-const DefaultUserAgent = "SailVless/0.2"
+const DefaultUserAgent = "SailVless/1.2"
 
 // Subscription is stored without its URL (that lives in secrets.json).
 type Subscription struct {

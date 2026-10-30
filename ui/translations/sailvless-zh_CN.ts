@@ -301,6 +301,10 @@
         <translation>规则</translation>
     </message>
     <message>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
         <source>Move up</source>
         <translation>上移</translation>
     </message>
@@ -426,6 +430,10 @@
         <translation>我的规则（优先匹配）</translation>
     </message>
     <message>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
         <source>Move up</source>
         <translation>上移</translation>
     </message>
@@ -468,6 +476,10 @@
 </context>
 <context>
     <name>RuleDialog</name>
+    <message>
+        <source>Save</source>
+        <translation>保存</translation>
+    </message>
     <message>
         <source>Add</source>
         <translation>添加</translation>
@@ -550,6 +562,12 @@
 </context>
 <context>
     <name>ServersPage</name>
+    <message numerus="yes">
+        <source>%n rule(s)</source>
+        <translation>
+            <numerusform>%n 条规则</numerusform>
+        </translation>
+    </message>
     <message>
         <source>Added manually</source>
         <translation>手动添加</translation>
@@ -580,7 +598,7 @@
     </message>
     <message>
         <source>Ping all</source>
-        <translation>全部测速</translation>
+        <translation>全部测延迟</translation>
     </message>
     <message>
         <source>Connect</source>

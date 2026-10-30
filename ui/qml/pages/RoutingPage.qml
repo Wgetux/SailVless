@@ -102,6 +102,19 @@ Page {
         return kinds[r.kind] + " " + r.value + "  →  " + actions[r.action]
     }
 
+    function editRule(rule) {
+        var d = pageStack.push(Qt.resolvedUrl("RuleDialog.qml"),
+                               { editing: true, kind: rule.kind, action: rule.action, value: rule.value })
+        d.accepted.connect(function () {
+            var rules = page.routing.rules.slice(0)
+            for (var i = 0; i < rules.length; i++) {
+                if (page.key(rules[i]) === page.key(rule))
+                    rules[i] = { kind: d.kind, value: d.value, action: d.action }
+            }
+            page.save({ rules: rules })
+        })
+    }
+
     function removeRule(rule) {
         if (!page.marked[key(rule)])
             toggle(rule)
@@ -248,11 +261,15 @@ Page {
                     contentHeight: Theme.itemSizeSmall
                     readonly property bool isMarked: !!page.marked[page.key(modelData)]
                     highlighted: down || isMarked
-                    onClicked: if (page.selecting) page.toggle(modelData)
+                    onClicked: page.selecting ? page.toggle(modelData) : page.editRule(modelData)
                     menu: page.selecting ? null : ruleMenu
                     Component {
                         id: ruleMenu
                         ContextMenu {
+                            MenuItem {
+                                text: qsTr("Edit")
+                                onClicked: page.editRule(modelData)
+                            }
                             MenuItem {
                                 text: qsTr("Move up")
                                 visible: index > 0

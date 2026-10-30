@@ -8,6 +8,7 @@ Dialog {
     readonly property var actions: ["proxy", "direct", "block"]
     property string kind: "suffix"
     property string action: "direct"
+    property bool editing: false
     property alias value: valueField.text
 
     canAccept: valueField.text.trim().length > 0 && valueField.acceptableInput
@@ -15,10 +16,11 @@ Dialog {
     Column {
         width: parent.width
 
-        DialogHeader { acceptText: qsTr("Add") }
+        DialogHeader { acceptText: dialog.editing ? qsTr("Save") : qsTr("Add") }
 
         ComboBox {
             label: qsTr("Match")
+            currentIndex: dialog.kinds.indexOf(dialog.kind)
             menu: ContextMenu {
                 MenuItem { text: qsTr("domain and subdomains"); onClicked: dialog.kind = "suffix" }
                 MenuItem { text: qsTr("exact domain"); onClicked: dialog.kind = "domain" }
@@ -44,7 +46,7 @@ Dialog {
 
         ComboBox {
             label: qsTr("Action")
-            currentIndex: 1
+            currentIndex: dialog.actions.indexOf(dialog.action)
             menu: ContextMenu {
                 MenuItem { text: qsTr("through the proxy"); onClicked: dialog.action = "proxy" }
                 MenuItem { text: qsTr("direct"); onClicked: dialog.action = "direct" }

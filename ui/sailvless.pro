@@ -3,7 +3,7 @@ TARGET = sailvless
 CONFIG += sailfishapp sailfishapp_i18n
 QT += dbus
 
-isEmpty(VERSION): VERSION = 1.1.0
+isEmpty(VERSION): VERSION = 1.2.0
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += \

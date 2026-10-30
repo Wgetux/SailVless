@@ -212,5 +212,12 @@
   "License": "Лицензия",
   "Free software: you may share and change it under the GNU GPL v3 or later. Source code:": "Свободная программа: её можно распространять и изменять на условиях GNU GPL v3 или более поздней. Исходный код:",
   "Connect when the phone starts": "Подключаться при запуске телефона",
-  "If you were connected before restarting the phone, connect again. Off: stay disconnected until you connect.": "Если перед перезагрузкой телефона подключение было включено, оно включится снова. Выключено: без подключения, пока вы не включите его сами."
+  "If you were connected before restarting the phone, connect again. Off: stay disconnected until you connect.": "Если перед перезагрузкой телефона подключение было включено, оно включится снова. Выключено: без подключения, пока вы не включите его сами.",
+  "%n rule(s)": [
+    "%n правило",
+    "%n правила",
+    "%n правил"
+  ],
+  "Save": "Сохранить",
+  "Edit": "Изменить"
 }

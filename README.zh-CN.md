@@ -29,7 +29,7 @@ Shadowsocks、Hysteria2、TUIC 和 AmneziaWG。
   其他代码：该国顶级域名和 IP 段）/ 仅使用自己的规则；广告拦截；按域名、后缀、关键字、IP/子网、geosite、geoip
   设置规则，动作为“代理 / 直连 / 拦截”。手机语言为中文时，默认国家代码为 `cn`。
 - **单个服务器的规则**，优先于通用规则匹配（例如在全局隧道服务器上让某些网站直连）；规则可导出到文件、从文件导入，
-  也可多选后批量删除。
+  也可编辑、多选后批量删除；有自己规则的服务器带星号标记。
 - **DNS：** 经代理的 DNS（DoH、TCP、UDP）和直连网站的 DNS 分开设置；TUN 模式下 DNS 不会绕过隧道泄漏。
 - **本地代理：** SOCKS5 和 HTTP 仅监听 127.0.0.1，带用户名和密码（随机生成，默认开启），端口可固定或随机；
   向局域网开放需要手动打开开关并会有警告。
@@ -93,7 +93,10 @@ root 辅助服务只接受 `defaultuser` 的调用（D-Bus 策略），自行生
 - **AmneziaWG：** `vpn://` 链接中只读取 AmneziaWG（不支持 Amnezia 的 OpenVPN/Cloak/XRay 容器）。AWG 服务器不显示
   延迟（UDP），可通过隧道连通性检查判断是否可用。分流配置中服务器可能只转发其自身列表中的网络，此时“代理”规则无法
   添加其他网站。
-- **Waydroid：** 隧道规则也覆盖容器的转发流量，但不会开启转发，也未经测试。
+- **Waydroid：** 在 OnePlus 6T 上可与 TUN 模式配合使用：容器流量遵循相同的路由，包括分流配置。在 Halium 移植版上，
+  Waydroid 本身可能需要两处修改：`systemctl disable --now dnsmasq.service`（随其安装的服务在重启后会占用 53 端口，
+  使它自己的 dnsmasq 无法启动），以及在 `/var/lib/waydroid/waydroid_base.prop` 和 `waydroid.cfg` 的 `[properties]` 中
+  设置容器内存在的 `media.settings.xml`（例如 `/vendor/etc/media_profiles_V1_0.xml`，否则 Android 会在启动画面反复重启）。
 
 ## 构建
 

@@ -303,6 +303,10 @@
         <translation>Правила</translation>
     </message>
     <message>
+        <source>Edit</source>
+        <translation>Изменить</translation>
+    </message>
+    <message>
         <source>Move up</source>
         <translation>Выше</translation>
     </message>
@@ -430,6 +434,10 @@
         <translation>Мои правила (проверяются первыми)</translation>
     </message>
     <message>
+        <source>Edit</source>
+        <translation>Изменить</translation>
+    </message>
+    <message>
         <source>Move up</source>
         <translation>Выше</translation>
     </message>
@@ -472,6 +480,10 @@
 </context>
 <context>
     <name>RuleDialog</name>
+    <message>
+        <source>Save</source>
+        <translation>Сохранить</translation>
+    </message>
     <message>
         <source>Add</source>
         <translation>Добавить</translation>
@@ -554,6 +566,14 @@
 </context>
 <context>
     <name>ServersPage</name>
+    <message numerus="yes">
+        <source>%n rule(s)</source>
+        <translation>
+            <numerusform>%n правило</numerusform>
+            <numerusform>%n правила</numerusform>
+            <numerusform>%n правил</numerusform>
+        </translation>
+    </message>
     <message>
         <source>Added manually</source>
         <translation>Добавлены вручную</translation>

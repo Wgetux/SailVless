@@ -146,16 +146,19 @@ type ProfileView struct {
 	Selected bool   `json:"selected"`
 	Ping     *int   `json:"ping,omitempty"` // ms, PingFailed, PingNA; absent = not measured
 	Core     string `json:"core"`
+	// RuleCount is the number of this server's own rules
+	RuleCount int `json:"ruleCount,omitempty"`
 }
 
 func (s *Service) Profiles() []ProfileView {
-	sel := s.Store.Settings().SelectedID
+	set := s.Store.Settings()
+	sel := set.SelectedID
 	s.mu.Lock()
 	pings := s.pings
 	s.mu.Unlock()
 	var out []ProfileView
 	for _, p := range s.Store.Profiles() {
-		v := ProfileView{Profile: p, Selected: p.ID == sel, Core: p.Core()}
+		v := ProfileView{Profile: p, Selected: p.ID == sel, Core: p.Core(), RuleCount: len(set.ProfileRules[p.ID])}
 		if ms, ok := pings[p.ID]; ok {
 			v.Ping = &ms
 		}

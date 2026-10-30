@@ -22,6 +22,16 @@
     </message>
 </context>
 <context>
+    <name>ServersPage</name>
+    <message numerus="yes">
+        <source>%n rule(s)</source>
+        <translation>
+            <numerusform>%n rule</numerusform>
+            <numerusform>%n rules</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>SubscriptionPage</name>
     <message numerus="yes">
         <source>Every %n hour(s)</source>

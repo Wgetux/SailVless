@@ -20,7 +20,8 @@ Page {
             var p = app.profiles[i]
             list.push({
                 id: p.id, name: p.name, selected: p.selected, subId: p.subId || "", protocol: p.protocol,
-                desc: Util.describe(p) + " · " + p.core,
+                desc: (p.ruleCount ? "\u2605 " + qsTr("%n rule(s)", "", p.ruleCount) + " · " : "")
+                      + Util.describe(p) + " · " + p.core,
                 ping: p.ping === undefined ? noPing : p.ping,
                 section: p.subId ? app.subscriptionName(p.subId) : qsTr("Added manually")
             })
