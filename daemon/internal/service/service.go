@@ -364,6 +364,10 @@ func (s *Service) Shutdown() {
 	s.activeID, s.stats = "", nil
 	s.mu.Unlock()
 	s.removeConfigs()
+	// the UI may not be the one who asked (system VPN switch, reconnect logic)
+	if s.OnState != nil {
+		s.OnState(s.Status())
+	}
 }
 
 func freePort() (int, error) {

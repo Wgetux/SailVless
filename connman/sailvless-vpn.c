@@ -150,6 +150,14 @@ static int report_up(struct vpn_provider *provider)
 	return 0;
 }
 
+static gboolean up_now(gpointer data)
+{
+	timeout_id = 0;
+	if (active)
+		finish_pending(report_up(active));
+	return G_SOURCE_REMOVE;
+}
+
 static gboolean connect_timeout(gpointer data)
 {
 	timeout_id = 0;
@@ -179,11 +187,14 @@ static int sv_connect(struct vpn_provider *provider, struct connman_task *task,
 	ready = FALSE;
 
 	if (connman_inet_ifindex(IFNAME) >= 0) {
-		/* the tunnel is already running (started from the app) */
-		int err = report_up(provider);
-		if (cb)
-			cb(provider, user_data, -err);
-		return err;
+		/* the tunnel is already running (started from the app). Report READY
+		 * once vpnd is done with this call: it sets its own states after
+		 * connect() returns and would overwrite a READY set from here */
+		finish_pending(-ECANCELED);
+		pending_cb = cb;
+		pending_data = user_data;
+		timeout_id = g_timeout_add(100, up_now, NULL);
+		return -EINPROGRESS;
 	}
 
 	/* started from the system UI: the helper asks the SailVless daemon */
