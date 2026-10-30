@@ -29,6 +29,8 @@ const ctlUsage = `usage: sailvlessd ctl <command>
   delete <id>
   rules <id> [json]      show or replace a server's own rules, e.g.
                          '[{"kind":"suffix","value":"example.com","action":"direct"}]'
+  rules-export [id]      save a server's (default: the common) rules to ~/Documents/SailVless
+  rules-import <path> [id]  add rules from a file
   settings [json-patch]  show or change settings, e.g. '{"httpPort":0}'
   regen-creds            new random login/password for local proxy
   random-ports           pick random free local ports
@@ -134,6 +136,14 @@ func ctl(args []string) int {
 			if err2 = call("GetProfileRules", []any{&s}, arg(1)); err2 == nil {
 				printJSON(s)
 			}
+		}
+	case "rules-export":
+		if err2 = call("ExportRules", []any{&s}, arg(1)); err2 == nil {
+			fmt.Println(s)
+		}
+	case "rules-import":
+		if err2 = call("ImportRules", []any{&s}, arg(2), arg(1)); err2 == nil {
+			fmt.Println(s)
 		}
 	case "settings":
 		if arg(1) != "" {

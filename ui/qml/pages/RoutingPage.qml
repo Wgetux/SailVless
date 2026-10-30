@@ -41,11 +41,26 @@ Page {
 
     Component.onCompleted: load()
 
+    RulesFile {
+        id: rulesFile
+        profileId: ""
+        onImported: page.load()
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height + Theme.paddingLarge
 
         PullDownMenu {
+            MenuItem {
+                text: qsTr("Import rules from file")
+                onClicked: rulesFile.importRules()
+            }
+            MenuItem {
+                text: qsTr("Export rules to file")
+                enabled: page.routing.rules.length > 0
+                onClicked: rulesFile.exportRules()
+            }
             MenuItem {
                 text: qsTr("Add rule")
                 onClicked: {

@@ -192,7 +192,12 @@
   "Rules for this server": "Правила этого сервера",
   "Server rules": "Правила сервера",
   "Rules": "Правила",
-  "Only for this server, checked before the common rules (Routing). E.g. banks and government services direct with a full-tunnel server.": "Действуют только для этого сервера и проверяются раньше общих правил (Маршрутизация). Например, банки и Госуслуги напрямую при полном туннеле.",
-  "AntiZapret split configs: the server forwards only sites from its own list, so \"through the proxy\" does not add new sites; ask the server's admin to add them. \"Direct\" and \"block\" work.": "Раздельные конфиги АнтиЗапрета: сервер пропускает только сайты из своего списка, поэтому «через прокси» новые сайты не добавит — их добавляет администратор сервера. «Напрямую» и «блокировать» работают.",
-  "Imported full configs use rules only with \"Apply these rules to imported configs\" on (Routing).": "Импортированные полные конфиги учитывают правила, только если включено «Применять эти правила к импортированным конфигам» (Маршрутизация)."
+  "Imported full configs use rules only with \"Apply these rules to imported configs\" on (Routing).": "Импортированные полные конфиги учитывают правила, только если включено «Применять эти правила к импортированным конфигам» (Маршрутизация).",
+  "Only for this server, checked before the common rules (Routing).": "Действуют только для этого сервера и проверяются раньше общих правил (Маршрутизация).",
+  "Split configs (only some networks through the tunnel): a server may forward only its own list of sites, then \"through the proxy\" cannot add new ones. \"Direct\" and \"block\" always work.": "Раздельные конфиги (через туннель идут только некоторые сети): сервер может пропускать только сайты из своего списка, тогда «через прокси» новые сайты не добавит. «Напрямую» и «блокировать» работают всегда.",
+  "Import rules from file": "Импорт правил из файла",
+  "Export rules to file": "Экспорт правил в файл",
+  "Saved to %1": "Сохранено: %1",
+  "Rules file": "Файл правил",
+  "Rules added: %1, already there: %2": "Добавлено правил: %1, уже были: %2"
 }

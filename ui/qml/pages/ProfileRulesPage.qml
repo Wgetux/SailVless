@@ -32,11 +32,26 @@ Page {
 
     Component.onCompleted: load()
 
+    RulesFile {
+        id: rulesFile
+        profileId: page.profileId
+        onImported: page.load()
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height + Theme.paddingLarge
 
         PullDownMenu {
+            MenuItem {
+                text: qsTr("Import rules from file")
+                onClicked: rulesFile.importRules()
+            }
+            MenuItem {
+                text: qsTr("Export rules to file")
+                enabled: page.rules.length > 0
+                onClicked: rulesFile.exportRules()
+            }
             MenuItem {
                 text: qsTr("Add rule")
                 onClicked: {
@@ -65,7 +80,7 @@ Page {
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryHighlightColor
-                text: qsTr("Only for this server, checked before the common rules (Routing). E.g. banks and government services direct with a full-tunnel server.")
+                text: qsTr("Only for this server, checked before the common rules (Routing).")
             }
             Item { width: 1; height: Theme.paddingMedium }
             Label {
@@ -75,7 +90,7 @@ Page {
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryHighlightColor
-                text: qsTr("AntiZapret split configs: the server forwards only sites from its own list, so \"through the proxy\" does not add new sites; ask the server's admin to add them. \"Direct\" and \"block\" work.")
+                text: qsTr("Split configs (only some networks through the tunnel): a server may forward only its own list of sites, then \"through the proxy\" cannot add new ones. \"Direct\" and \"block\" always work.")
             }
             Label {
                 visible: page.protocol === "xray-json"

@@ -104,6 +104,21 @@ func (a *api) SetProfileRules(id, rulesJSON string) *dbus.Error {
 	return dbusErr(a.svc.SetProfileRules(id, rules))
 }
 
+// ExportRules saves a server's ("" = the common) rules to a file, returns its path.
+func (a *api) ExportRules(id string) (string, *dbus.Error) {
+	p, err := a.svc.ExportRules(id)
+	return p, dbusErr(err)
+}
+
+// ImportRules adds rules from a file, returns {"added": n, "skipped": n}.
+func (a *api) ImportRules(id, path string) (string, *dbus.Error) {
+	added, skipped, err := a.svc.ImportRules(id, path)
+	if err != nil {
+		return "", dbusErr(err)
+	}
+	return toJSON(map[string]int{"added": added, "skipped": skipped}), nil
+}
+
 func (a *api) Connect(id string) *dbus.Error { return dbusErr(a.svc.Connect(id)) }
 
 func (a *api) Disconnect() *dbus.Error { a.svc.Disconnect(); return nil }
@@ -240,6 +255,8 @@ const introXML = `<interface name="` + Interface + `">
   <method name="RenameProfile"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="name"/></method>
   <method name="GetProfileRules"><arg direction="in" type="s" name="id"/><arg direction="out" type="s" name="rulesJson"/></method>
   <method name="SetProfileRules"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="rulesJson"/></method>
+  <method name="ExportRules"><arg direction="in" type="s" name="id"/><arg direction="out" type="s" name="path"/></method>
+  <method name="ImportRules"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="path"/><arg direction="out" type="s" name="resultJson"/></method>
   <method name="Connect"><arg direction="in" type="s" name="id"/></method>
   <method name="Disconnect"/>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>
