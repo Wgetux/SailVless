@@ -27,6 +27,7 @@ const ctlUsage = `usage: sailvlessd ctl <command>
   connect-best           ping and connect to the fastest server
   status
   delete <id>
+  pin <id> [off]         pin a server to the top of the list, or unpin it
   rules <id> [json]      show or replace a server's own rules, e.g.
                          '[{"kind":"suffix","value":"example.com","action":"direct"}]'
   rules-export [id]      save a server's (default: the common) rules to ~/Documents/SailVless
@@ -128,6 +129,8 @@ func ctl(args []string) int {
 		}
 	case "delete":
 		err2 = call("DeleteProfile", nil, arg(1))
+	case "pin":
+		err2 = call("SetPinned", nil, arg(1), arg(2) != "off")
 	case "rules":
 		if arg(2) != "" {
 			err2 = call("SetProfileRules", nil, arg(1), arg(2))

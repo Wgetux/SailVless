@@ -20,13 +20,16 @@ Page {
             var p = app.profiles[i]
             list.push({
                 id: p.id, name: p.name, selected: p.selected, subId: p.subId || "", protocol: p.protocol,
-                desc: (p.ruleCount ? "\u2605 " + qsTr("%n rule(s)", "", p.ruleCount) + " · " : "")
+                desc: (p.ruleCount ? qsTr("%n rule(s)", "", p.ruleCount) + " · " : "")
                       + Util.describe(p) + " · " + p.core,
+                pinned: !!p.pinned,
                 ping: p.ping === undefined ? noPing : p.ping,
-                section: p.subId ? app.subscriptionName(p.subId) : qsTr("Added manually")
+                section: p.pinned ? qsTr("Pinned") : p.subId ? app.subscriptionName(p.subId) : qsTr("Added manually")
             })
         }
         list.sort(function (a, b) {
+            if (a.pinned !== b.pinned)
+                return a.pinned ? -1 : 1
             if (a.section !== b.section)
                 return a.section < b.section ? -1 : 1
             if (sortByPing && pingKey(a.ping) !== pingKey(b.ping))
@@ -136,6 +139,13 @@ Page {
                     onClicked: page.connectTo(model.id)
                 }
                 MenuItem {
+                    text: model.pinned ? qsTr("Unpin") : qsTr("Pin to top")
+                    onClicked: {
+                        var id = model.id, pinned = !model.pinned
+                        app.run("SetPinned", [id, pinned], app.refreshProfiles)
+                    }
+                }
+                MenuItem {
                     text: qsTr("Rules for this server")
                     onClicked: pageStack.push(Qt.resolvedUrl("ProfileRulesPage.qml"),
                                               { profileId: model.id, profileName: model.name, protocol: model.protocol })
@@ -168,7 +178,7 @@ Page {
                     width: parent.width
                     truncationMode: TruncationMode.Fade
                     color: item.highlighted ? Theme.highlightColor : Theme.primaryColor
-                    text: Util.name(model.name)
+                    text: (model.pinned ? "\u2605 " : "") + Util.name(model.name)
                 }
                 Label {
                     width: parent.width

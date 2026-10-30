@@ -575,6 +575,10 @@
         </translation>
     </message>
     <message>
+        <source>Pinned</source>
+        <translation>Закреплённые</translation>
+    </message>
+    <message>
         <source>Added manually</source>
         <translation>Добавлены вручную</translation>
     </message>
@@ -609,6 +613,14 @@
     <message>
         <source>Connect</source>
         <translation>Подключить</translation>
+    </message>
+    <message>
+        <source>Unpin</source>
+        <translation>Открепить</translation>
+    </message>
+    <message>
+        <source>Pin to top</source>
+        <translation>Закрепить</translation>
     </message>
     <message>
         <source>Rules for this server</source>

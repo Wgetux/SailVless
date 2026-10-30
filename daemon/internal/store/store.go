@@ -45,6 +45,7 @@ type Settings struct {
 	RouteImported bool           `json:"routeImported"` // apply Routing to imported full configs too
 	// per-server rules (key: profile ID), checked before Routing.Rules
 	ProfileRules map[string][]routing.Rule `json:"profileRules,omitempty"`
+	Pinned       []string                  `json:"pinned,omitempty"` // profile IDs at the top of the list
 
 	UserAgent   string `json:"userAgent"`
 	HWIDEnabled bool   `json:"hwidEnabled"`
@@ -366,6 +367,30 @@ func (s *Store) Upsert(ps []*link.Profile) error {
 	return s.saveLocked()
 }
 
+// SetPinned pins or unpins a profile; nothing about the connection changes.
+func (s *Store) SetPinned(id string, pinned bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.profiles[id]; !ok {
+		return errors.New("no such profile")
+	}
+	s.settings.Pinned = without(s.settings.Pinned, id)
+	if pinned {
+		s.settings.Pinned = append(s.settings.Pinned, id)
+	}
+	return s.saveLocked()
+}
+
+func without(ids []string, id string) []string {
+	var out []string
+	for _, v := range ids {
+		if v != id {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
 // Rename changes a profile's display name.
 func (s *Store) Rename(id, name string) error {
 	s.mu.Lock()
@@ -383,6 +408,7 @@ func (s *Store) Delete(id string) error {
 	defer s.mu.Unlock()
 	delete(s.profiles, id)
 	delete(s.settings.ProfileRules, id)
+	s.settings.Pinned = without(s.settings.Pinned, id)
 	if s.settings.SelectedID == id {
 		s.settings.SelectedID = ""
 	}

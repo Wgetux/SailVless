@@ -47,6 +47,35 @@ func TestSecretsSeparated(t *testing.T) {
 	}
 }
 
+func TestPinned(t *testing.T) {
+	s, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _ := link.Parse("vless://u@h.example.com:443?security=tls#n")
+	if err := s.Upsert([]*link.Profile{p}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetPinned("nope", true); err == nil {
+		t.Fatal("pinned an unknown profile")
+	}
+	for i := 0; i < 2; i++ {
+		if err := s.SetPinned(p.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := s.Settings().Pinned; len(got) != 1 || got[0] != p.ID {
+		t.Fatalf("pinned %v", got)
+	}
+	if err := s.SetPinned(p.ID, false); err != nil || len(s.Settings().Pinned) != 0 {
+		t.Fatalf("unpin: %v %v", err, s.Settings().Pinned)
+	}
+	_ = s.SetPinned(p.ID, true)
+	if err := s.Delete(p.ID); err != nil || len(s.Settings().Pinned) != 0 {
+		t.Fatalf("delete kept the pin: %v %v", err, s.Settings().Pinned)
+	}
+}
+
 func TestProfileRules(t *testing.T) {
 	s, err := Open(t.TempDir())
 	if err != nil {

@@ -87,6 +87,10 @@ func (a *api) RenameProfile(id, name string) *dbus.Error {
 	return dbusErr(a.svc.Store.Rename(id, name))
 }
 
+func (a *api) SetPinned(id string, pinned bool) *dbus.Error {
+	return dbusErr(a.svc.Store.SetPinned(id, pinned))
+}
+
 // GetProfileRules returns one server's own rules as a JSON list.
 func (a *api) GetProfileRules(id string) (string, *dbus.Error) {
 	rules := a.svc.Store.Settings().ProfileRules[id]
@@ -253,6 +257,7 @@ const introXML = `<interface name="` + Interface + `">
   <method name="ListProfiles"><arg direction="out" type="s" name="profilesJson"/></method>
   <method name="DeleteProfile"><arg direction="in" type="s" name="id"/></method>
   <method name="RenameProfile"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="name"/></method>
+  <method name="SetPinned"><arg direction="in" type="s" name="id"/><arg direction="in" type="b" name="pinned"/></method>
   <method name="GetProfileRules"><arg direction="in" type="s" name="id"/><arg direction="out" type="s" name="rulesJson"/></method>
   <method name="SetProfileRules"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="rulesJson"/></method>
   <method name="ExportRules"><arg direction="in" type="s" name="id"/><arg direction="out" type="s" name="path"/></method>

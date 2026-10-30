@@ -31,7 +31,8 @@ Free software under the GNU GPL v3 or later. Tested on a OnePlus 6T with Sailfis
   `ru`: Russian services, .ru/.su/.рф and IP ranges; other codes: the TLD and IP ranges) / only your own rules;
   ad blocking; rules by domain, suffix, keyword, IP/subnet, geosite, geoip with "proxy / direct / block".
 - **Rules per server**, checked before the common ones (e.g. some sites direct only with a full-tunnel server);
-  rules can be exported to and imported from files, edited, selected and deleted in bulk; servers with their own rules are marked with a star.
+  rules can be exported to and imported from files, edited, selected and deleted in bulk.
+- **Pinned servers** stay at the top of the list, marked with a star.
 - **DNS:** separate servers through the proxy (DoH, TCP, UDP) and for direct sites; in TUN mode DNS never leaks
   around the tunnel.
 - **Local proxy:** SOCKS5 and HTTP on 127.0.0.1 only, login and password (random, on by default), fixed or random

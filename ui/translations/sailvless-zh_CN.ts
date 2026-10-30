@@ -569,6 +569,10 @@
         </translation>
     </message>
     <message>
+        <source>Pinned</source>
+        <translation>已置顶</translation>
+    </message>
+    <message>
         <source>Added manually</source>
         <translation>手动添加</translation>
     </message>
@@ -603,6 +607,14 @@
     <message>
         <source>Connect</source>
         <translation>连接</translation>
+    </message>
+    <message>
+        <source>Unpin</source>
+        <translation>取消置顶</translation>
+    </message>
+    <message>
+        <source>Pin to top</source>
+        <translation>置顶</translation>
     </message>
     <message>
         <source>Rules for this server</source>
