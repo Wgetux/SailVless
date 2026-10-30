@@ -73,6 +73,13 @@ func run(path string) error {
 		return fmt.Errorf("config: %w", err)
 	}
 
+	// Xray already decides what enters the tunnel (the config's AllowedIPs plus
+	// the user's rules), so the device must not drop the rest: with a single
+	// peer it gets everything
+	if len(cfg.Peers) == 1 {
+		cfg.Peers[0].AllowedIPs = []string{"0.0.0.0/0", "::/0"}
+	}
+
 	var local []netip.Addr
 	for _, p := range cfg.Addresses {
 		local = append(local, p.Addr())

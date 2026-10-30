@@ -11,6 +11,7 @@ import (
 	"github.com/godbus/dbus/v5"
 	"github.com/godbus/dbus/v5/introspect"
 
+	"sailvless/internal/routing"
 	"sailvless/internal/service"
 )
 
@@ -84,6 +85,23 @@ func (a *api) RenameProfile(id, name string) *dbus.Error {
 		return dbusErr(fmt.Errorf("name must not be empty"))
 	}
 	return dbusErr(a.svc.Store.Rename(id, name))
+}
+
+// GetProfileRules returns one server's own rules as a JSON list.
+func (a *api) GetProfileRules(id string) (string, *dbus.Error) {
+	rules := a.svc.Store.Settings().ProfileRules[id]
+	if rules == nil {
+		rules = []routing.Rule{}
+	}
+	return toJSON(rules), nil
+}
+
+func (a *api) SetProfileRules(id, rulesJSON string) *dbus.Error {
+	var rules []routing.Rule
+	if err := json.Unmarshal([]byte(rulesJSON), &rules); err != nil {
+		return dbusErr(fmt.Errorf("rules: %w", err))
+	}
+	return dbusErr(a.svc.SetProfileRules(id, rules))
 }
 
 func (a *api) Connect(id string) *dbus.Error { return dbusErr(a.svc.Connect(id)) }
@@ -220,6 +238,8 @@ const introXML = `<interface name="` + Interface + `">
   <method name="ListProfiles"><arg direction="out" type="s" name="profilesJson"/></method>
   <method name="DeleteProfile"><arg direction="in" type="s" name="id"/></method>
   <method name="RenameProfile"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="name"/></method>
+  <method name="GetProfileRules"><arg direction="in" type="s" name="id"/><arg direction="out" type="s" name="rulesJson"/></method>
+  <method name="SetProfileRules"><arg direction="in" type="s" name="id"/><arg direction="in" type="s" name="rulesJson"/></method>
   <method name="Connect"><arg direction="in" type="s" name="id"/></method>
   <method name="Disconnect"/>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>

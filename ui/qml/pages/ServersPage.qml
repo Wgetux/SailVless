@@ -19,7 +19,7 @@ Page {
         for (var i = 0; i < app.profiles.length; i++) {
             var p = app.profiles[i]
             list.push({
-                id: p.id, name: p.name, selected: p.selected, subId: p.subId || "",
+                id: p.id, name: p.name, selected: p.selected, subId: p.subId || "", protocol: p.protocol,
                 desc: Util.describe(p) + " · " + p.core,
                 ping: p.ping === undefined ? noPing : p.ping,
                 section: p.subId ? app.subscriptionName(p.subId) : qsTr("Added manually")
@@ -133,6 +133,11 @@ Page {
                 MenuItem {
                     text: qsTr("Connect")
                     onClicked: page.connectTo(model.id)
+                }
+                MenuItem {
+                    text: qsTr("Rules for this server")
+                    onClicked: pageStack.push(Qt.resolvedUrl("ProfileRulesPage.qml"),
+                                              { profileId: model.id, profileName: model.name, protocol: model.protocol })
                 }
                 MenuItem {
                     text: qsTr("Rename")

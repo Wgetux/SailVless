@@ -221,6 +221,69 @@
     </message>
 </context>
 <context>
+    <name>ProfileRulesPage</name>
+    <message>
+        <source>domain</source>
+        <translation>домен</translation>
+    </message>
+    <message>
+        <source>domain and subdomains</source>
+        <translation>домен и поддомены</translation>
+    </message>
+    <message>
+        <source>contains</source>
+        <translation>содержит</translation>
+    </message>
+    <message>
+        <source>proxy</source>
+        <translation>через прокси</translation>
+    </message>
+    <message>
+        <source>direct</source>
+        <translation>напрямую</translation>
+    </message>
+    <message>
+        <source>block</source>
+        <translation>блокировать</translation>
+    </message>
+    <message>
+        <source>Add rule</source>
+        <translation>Добавить правило</translation>
+    </message>
+    <message>
+        <source>Server rules</source>
+        <translation>Правила сервера</translation>
+    </message>
+    <message>
+        <source>Only for this server, checked before the common rules (Routing). E.g. banks and government services direct with a full-tunnel server.</source>
+        <translation>Действуют только для этого сервера и проверяются раньше общих правил (Маршрутизация). Например, банки и Госуслуги напрямую при полном туннеле.</translation>
+    </message>
+    <message>
+        <source>AntiZapret split configs: the server forwards only sites from its own list, so &quot;through the proxy&quot; does not add new sites; ask the server&apos;s admin to add them. &quot;Direct&quot; and &quot;block&quot; work.</source>
+        <translation>Раздельные конфиги АнтиЗапрета: сервер пропускает только сайты из своего списка, поэтому «через прокси» новые сайты не добавит — их добавляет администратор сервера. «Напрямую» и «блокировать» работают.</translation>
+    </message>
+    <message>
+        <source>Imported full configs use rules only with &quot;Apply these rules to imported configs&quot; on (Routing).</source>
+        <translation>Импортированные полные конфиги учитывают правила, только если включено «Применять эти правила к импортированным конфигам» (Маршрутизация).</translation>
+    </message>
+    <message>
+        <source>Rules</source>
+        <translation>Правила</translation>
+    </message>
+    <message>
+        <source>Move up</source>
+        <translation>Выше</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <source>No rules. Pull down to add one.</source>
+        <translation>Правил нет. Потяните вниз, чтобы добавить.</translation>
+    </message>
+</context>
+<context>
     <name>RoutingPage</name>
     <message>
         <source>domain</source>
@@ -447,6 +510,10 @@
     <message>
         <source>Connect</source>
         <translation>Подключить</translation>
+    </message>
+    <message>
+        <source>Rules for this server</source>
+        <translation>Правила этого сервера</translation>
     </message>
     <message>
         <source>Delete</source>

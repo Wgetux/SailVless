@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -39,6 +40,8 @@ type Settings struct {
 
 	Routing       routing.Config `json:"routing"`
 	RouteImported bool           `json:"routeImported"` // apply Routing to imported full configs too
+	// per-server rules (key: profile ID), checked before Routing.Rules
+	ProfileRules map[string][]routing.Rule `json:"profileRules,omitempty"`
 
 	UserAgent   string `json:"userAgent"`
 	HWIDEnabled bool   `json:"hwidEnabled"`
@@ -376,6 +379,7 @@ func (s *Store) Delete(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.profiles, id)
+	delete(s.settings.ProfileRules, id)
 	if s.settings.SelectedID == id {
 		s.settings.SelectedID = ""
 	}
@@ -385,7 +389,9 @@ func (s *Store) Delete(id string) error {
 func (s *Store) Settings() Settings {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.settings
+	v := s.settings
+	v.ProfileRules = maps.Clone(v.ProfileRules) // a JSON patch must not reach the stored map
+	return v
 }
 
 func (s *Store) SetSettings(v Settings) error {

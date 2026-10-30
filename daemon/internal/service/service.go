@@ -22,6 +22,7 @@ import (
 	"sailvless/internal/core"
 	"sailvless/internal/geo"
 	"sailvless/internal/link"
+	"sailvless/internal/routing"
 	"sailvless/internal/store"
 	"sailvless/internal/sub"
 	"sailvless/internal/tun"
@@ -220,6 +221,10 @@ func (s *Service) Connect(id string) error {
 		opts.Mark = tun.Mark
 	}
 	rc := set.Routing
+	if pr := set.ProfileRules[id]; len(pr) > 0 {
+		// this server's own rules come first
+		rc.Rules = append(append([]routing.Rule(nil), pr...), rc.Rules...)
+	}
 	opts.Routing, opts.RouteImported = &rc, set.RouteImported
 	opts.IPv4Only = !set.TunIPv6 // same IPv6 choice as the tunnel
 	coreName := p.Core()
@@ -436,6 +441,35 @@ func (s *Service) SetSettings(v store.Settings) error {
 	return s.reconnectIfActive()
 }
 
+// SetProfileRules replaces one server's own rules (empty: remove them).
+func (s *Service) SetProfileRules(id string, rules []routing.Rule) error {
+	if _, ok := s.Store.Profile(id); !ok {
+		return fmt.Errorf("no such profile")
+	}
+	set := s.Store.Settings()
+	if set.ProfileRules == nil {
+		set.ProfileRules = map[string][]routing.Rule{}
+	}
+	if len(rules) == 0 {
+		delete(set.ProfileRules, id)
+	} else {
+		set.ProfileRules[id] = rules
+	}
+	if err := validate(set); err != nil {
+		return err
+	}
+	if err := s.Store.SetSettings(set); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	active := s.activeID == id
+	s.mu.Unlock()
+	if !active {
+		return nil
+	}
+	return s.Connect(id)
+}
+
 func (s *Service) RegenerateCredentials() error {
 	if err := s.Store.RegenerateCredentials(); err != nil {
 		return err
@@ -475,6 +509,13 @@ func validate(v store.Settings) error {
 	}
 	if err := v.Routing.Validate(); err != nil {
 		return err
+	}
+	for _, rules := range v.ProfileRules {
+		for i, r := range rules {
+			if err := r.Validate(); err != nil {
+				return fmt.Errorf("server rule %d: %w", i+1, err)
+			}
+		}
 	}
 	if strings.TrimSpace(v.UserAgent) == "" {
 		return fmt.Errorf("user agent must not be empty")

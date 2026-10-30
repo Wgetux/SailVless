@@ -27,6 +27,8 @@ const ctlUsage = `usage: sailvlessd ctl <command>
   connect-best           ping and connect to the fastest server
   status
   delete <id>
+  rules <id> [json]      show or replace a server's own rules, e.g.
+                         '[{"kind":"suffix","value":"example.com","action":"direct"}]'
   settings [json-patch]  show or change settings, e.g. '{"httpPort":0}'
   regen-creds            new random login/password for local proxy
   random-ports           pick random free local ports
@@ -124,6 +126,15 @@ func ctl(args []string) int {
 		}
 	case "delete":
 		err2 = call("DeleteProfile", nil, arg(1))
+	case "rules":
+		if arg(2) != "" {
+			err2 = call("SetProfileRules", nil, arg(1), arg(2))
+		}
+		if err2 == nil {
+			if err2 = call("GetProfileRules", []any{&s}, arg(1)); err2 == nil {
+				printJSON(s)
+			}
+		}
 	case "settings":
 		if arg(1) != "" {
 			err2 = call("SetSettings", nil, arg(1))

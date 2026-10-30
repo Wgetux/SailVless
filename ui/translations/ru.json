@@ -188,5 +188,11 @@
   "One link per line: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, AmneziaWG only). Also accepted: a full Xray or sing-box JSON config, or an AmneziaWG/WireGuard .conf (paste the whole text).": "По одной ссылке в строке: vless://, vmess://, trojan://, ss://, hysteria2://, hy2://, tuic://, vpn:// (AmneziaVPN, только AmneziaWG). Также можно вставить полный JSON-конфиг Xray или sing-box либо конфиг AmneziaWG/WireGuard (.conf) целиком.",
   "Choose files": "Выбрать файлы",
   "Config files": "Файлы конфигурации",
-  "Rename": "Переименовать"
+  "Rename": "Переименовать",
+  "Rules for this server": "Правила этого сервера",
+  "Server rules": "Правила сервера",
+  "Rules": "Правила",
+  "Only for this server, checked before the common rules (Routing). E.g. banks and government services direct with a full-tunnel server.": "Действуют только для этого сервера и проверяются раньше общих правил (Маршрутизация). Например, банки и Госуслуги напрямую при полном туннеле.",
+  "AntiZapret split configs: the server forwards only sites from its own list, so \"through the proxy\" does not add new sites; ask the server's admin to add them. \"Direct\" and \"block\" work.": "Раздельные конфиги АнтиЗапрета: сервер пропускает только сайты из своего списка, поэтому «через прокси» новые сайты не добавит — их добавляет администратор сервера. «Напрямую» и «блокировать» работают.",
+  "Imported full configs use rules only with \"Apply these rules to imported configs\" on (Routing).": "Импортированные полные конфиги учитывают правила, только если включено «Применять эти правила к импортированным конфигам» (Маршрутизация)."
 }
