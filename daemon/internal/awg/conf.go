@@ -39,6 +39,15 @@ var obfuscationKeys = map[string]bool{
 	"i1": true, "i2": true, "i3": true, "i4": true, "i5": true,
 }
 
+// AmneziaWG 3.1 transport options: config key -> UAPI key. Values are
+// converted in UAPI (base64 key -> hex, on/off -> true/false).
+var awg3Keys = map[string]string{
+	"headerprotectionkey":    "header_protection_key",
+	"contentpaddingaddition": "content_padding_addition",
+	"randomtrailers":         "random_trailers",
+	"disablecookies":         "disable_cookies",
+}
+
 // LooksLikeConf tells whether text is a WireGuard/AmneziaWG config.
 func LooksLikeConf(text string) bool {
 	return strings.Contains(text, "[Interface]") && strings.Contains(text, "[Peer]")
@@ -100,6 +109,8 @@ func Parse(text string) (*Config, error) {
 				c.MTU, _ = strconv.Atoi(val)
 			case obfuscationKeys[key]:
 				c.Obfuscation[key] = val
+			case awg3Keys[key] != "":
+				c.Obfuscation[key] = val
 			}
 			// ListenPort, Table, PostUp... are wg-quick specifics, not needed in userspace
 		case "peer":
@@ -128,6 +139,15 @@ func splitList(s string) []string {
 		}
 	}
 	return out
+}
+
+// onOff reads wg-quick style booleans (on/off, true/false, 1/0).
+func onOff(v string) bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "on", "true", "1", "yes":
+		return true
+	}
+	return false
 }
 
 func keyHex(b64 string) (string, error) {
@@ -206,6 +226,23 @@ func (c *Config) UAPI(fwmark int, resolve func(host string) (string, error)) (st
 		if v, ok := c.Obfuscation[k]; ok {
 			fmt.Fprintf(&b, "%s=%s\n", k, v)
 		}
+	}
+	for _, k := range []string{"headerprotectionkey", "contentpaddingaddition", "randomtrailers", "disablecookies"} {
+		v, ok := c.Obfuscation[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "headerprotectionkey":
+			h, err := keyHex(v)
+			if err != nil {
+				return "", fmt.Errorf("HeaderProtectionKey: %w", err)
+			}
+			v = h
+		case "randomtrailers", "disablecookies":
+			v = strconv.FormatBool(onOff(v))
+		}
+		fmt.Fprintf(&b, "%s=%s\n", awg3Keys[k], v)
 	}
 	for _, p := range c.Peers {
 		pub, _ := keyHex(p.PublicKey)

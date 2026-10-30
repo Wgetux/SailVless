@@ -58,3 +58,30 @@ func TestParseAndUAPI(t *testing.T) {
 		t.Error("bad key accepted")
 	}
 }
+
+// AmneziaWG 3.1 transport options reach the device in UAPI form
+func TestAWG31Options(t *testing.T) {
+	conf := strings.Replace(sample, "I1 = <b 0xc000000001>", `S3 = 12
+S4 = 12
+HeaderProtectionKey = TS6+0Wl9xVdcPSfA3vy0mkh7Fv1rgOtrKEXa8Nm+K94=
+ContentPaddingAddition = 2
+RandomTrailers = on
+DisableCookies = off`, 1)
+	c, err := Parse(conf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, err := c.UAPI(0, func(string) (string, error) { return "192.0.2.1", nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"s3=12\n", "s4=12\n",
+		"header_protection_key=4d2ebed1697dc5575c3d27c0defcb49a487b16fd6b80eb6b2845daf0d9be2bde\n",
+		"content_padding_addition=2\n", "random_trailers=true\n", "disable_cookies=false\n",
+	} {
+		if !strings.Contains(u, want) {
+			t.Errorf("UAPI lacks %q", want)
+		}
+	}
+}
