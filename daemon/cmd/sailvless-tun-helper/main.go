@@ -46,9 +46,11 @@ type helper struct {
 	owner    string       // unique bus name of the caller that started the tunnel
 	lastUsed time.Time
 
-	lastState  string // last emitted state, to notice the tunnel coming up
-	restarting bool   // Start is replacing the tunnel: "stopped" in between is not news
-	exiting    bool   // the helper itself is stopping (e.g. package update)
+	lastState          string    // last emitted state, to notice the tunnel coming up
+	restarting         bool      // Start is replacing the tunnel: "stopped" in between is not news
+	exiting            bool      // the helper itself is stopping (e.g. package update)
+	sysConnecting      bool      // connmanConnect is running (it retries)
+	ownDisconnectUntil time.Time // a disconnect reported until then is the helper's own reset
 }
 
 type status struct {
@@ -404,6 +406,7 @@ func (h *helper) RestartCore() *dbus.Error {
 		return dbusErr(errors.New("tunnel is not running"))
 	}
 	h.logs.Add("helper: ", "restarting the core on request (network change or failed liveness check)")
+	go h.connmanConnect() // the system VPN may have been refused while there was no network
 	return dbusErr(c.Start(spec))
 }
 
