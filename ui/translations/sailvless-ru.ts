@@ -496,12 +496,12 @@
         <translation>Сохранено: %1</translation>
     </message>
     <message>
-        <source>Rules file</source>
-        <translation>Файл правил</translation>
-    </message>
-    <message>
         <source>Rules added: %1, already there: %2</source>
         <translation>Добавлено правил: %1, уже были: %2</translation>
+    </message>
+    <message>
+        <source>Rules file</source>
+        <translation>Файл правил</translation>
     </message>
 </context>
 <context>
