@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
+	"sailvless/internal/locale"
 )
 
 // Rule matches traffic and sends it to an action.
@@ -33,8 +35,13 @@ type Config struct {
 	DNSDirect   string `json:"dnsDirect"`   // for direct domains: IP, https+local://…, localhost
 }
 
+// Default: the bypass country follows the phone's region (zh_CN -> cn).
 func Default() Config {
-	return Config{Mode: Global, Country: "ru", CustomFinal: "proxy",
+	country := locale.Country(locale.Lang)
+	if !countRe.MatchString(country) {
+		country = "ru"
+	}
+	return Config{Mode: Global, Country: country, CustomFinal: "proxy",
 		DNSRemote: "https://1.1.1.1/dns-query", DNSDirect: "localhost"}
 }
 
@@ -138,11 +145,14 @@ func (c Config) Effective() ([]Rule, string) {
 	switch c.Mode {
 	case Bypass:
 		cc := strings.ToLower(c.Country)
-		if cc == "ru" {
+		switch cc {
+		case "cn":
+			out = append(out, Rule{Kind: "geosite", Value: "cn", Action: "direct"})
+		case "ru":
 			out = append(out,
 				Rule{Kind: "geosite", Value: "category-ru", Action: "direct"},
 				Rule{Kind: "geosite", Value: "tld-ru", Action: "direct"})
-		} else {
+		default:
 			out = append(out, Rule{Kind: "suffix", Value: cc, Action: "direct"})
 		}
 		out = append(out, Rule{Kind: "geoip", Value: cc, Action: "direct"})

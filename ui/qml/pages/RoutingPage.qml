@@ -208,7 +208,7 @@ Page {
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryHighlightColor
-                text: qsTr("Sites and IP addresses of this country go direct. For \"ru\": Russian services, .ru/.su/.рф domains and Russian IP ranges.")
+                text: qsTr("Sites and IP addresses of this country go direct. For \"cn\": Chinese services (geosite:cn) and Chinese IP ranges; for \"ru\": Russian services, .ru/.su/.рф domains and Russian IP ranges.")
             }
 
             ComboBox {

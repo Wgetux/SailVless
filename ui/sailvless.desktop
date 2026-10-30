@@ -6,6 +6,7 @@ Exec=/usr/bin/sailvless
 Name=SailVless
 Comment=VLESS / VMess / Trojan / Hysteria2 proxy client
 Comment[ru]=Прокси-клиент VLESS / VMess / Trojan / Hysteria2
+Comment[zh_CN]=VLESS / VMess / Trojan / Hysteria2 代理客户端
 
 [X-Sailjail]
 # The UI talks to sailvlessd over the session D-Bus, which the sandbox blocks.

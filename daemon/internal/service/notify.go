@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"sailvless/internal/core"
 	"sailvless/internal/geo"
+	"sailvless/internal/locale"
 )
 
 // Notifier shows a system notification (set by main; nil = disabled).
@@ -20,32 +20,27 @@ var notifyState struct {
 }
 
 // Notification texts; the daemon has no Qt translations, so the few strings
-// it shows itself are translated here.
-var ruTexts = map[string]string{
-	"Subscription: device limit reached":                                       "Подписка: превышен лимит устройств",
-	"Remove an old device in your panel or bot, then update the subscription.": "Удалите старое устройство в панели или боте и обновите подписку.",
-	"SailVless: no connection":                                                 "SailVless: нет соединения",
-	"SailVless: connected again":                                               "SailVless: соединение восстановлено",
-	"SailVless: server not responding":                                         "SailVless: сервер не отвечает",
-	"Switched to ":                                                             "Переключено на ",
+// it shows itself are translated here (by the phone's language).
+var texts = map[string]map[string]string{
+	"ru": {
+		"Subscription: device limit reached":                                       "Подписка: превышен лимит устройств",
+		"Remove an old device in your panel or bot, then update the subscription.": "Удалите старое устройство в панели или боте и обновите подписку.",
+		"SailVless: no connection":                                                 "SailVless: нет соединения",
+		"SailVless: connected again":                                               "SailVless: соединение восстановлено",
+		"SailVless: server not responding":                                         "SailVless: сервер не отвечает",
+		"Switched to ":                                                             "Переключено на ",
+	},
+	"zh": {
+		"Subscription: device limit reached":                                       "订阅：已达到设备数量上限",
+		"Remove an old device in your panel or bot, then update the subscription.": "请在面板或机器人中删除旧设备，然后更新订阅。",
+		"SailVless: no connection":                                                 "SailVless：无连接",
+		"SailVless: connected again":                                               "SailVless：已重新连接",
+		"SailVless: server not responding":                                         "SailVless：服务器无响应",
+		"Switched to ":                                                             "已切换到 ",
+	},
 }
 
-var russian = func() bool {
-	lang := os.Getenv("LANG")
-	for _, f := range []string{"/var/lib/environment/nemo/locale.conf", "/etc/locale.conf"} {
-		if lang != "" {
-			break
-		}
-		if b, err := os.ReadFile(f); err == nil {
-			for _, line := range strings.Split(string(b), "\n") {
-				if v, ok := strings.CutPrefix(strings.TrimSpace(line), "LANG="); ok {
-					lang = strings.Trim(v, `"`)
-				}
-			}
-		}
-	}
-	return strings.HasPrefix(lang, "ru")
-}()
+var langTexts = texts[locale.Language(locale.Lang)]
 
 // flagsToCodes turns flag emoji (regional indicator pairs, missing from
 // Sailfish fonts) into country codes: "🇫🇮 Finland" -> "FI Finland".
@@ -69,10 +64,8 @@ func flagsToCodes(s string) string {
 }
 
 func tr(s string) string {
-	if russian {
-		if t, ok := ruTexts[s]; ok {
-			return t
-		}
+	if t, ok := langTexts[s]; ok {
+		return t
 	}
 	return s
 }

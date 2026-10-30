@@ -402,8 +402,8 @@
         <translation>Код страны (напрямую)</translation>
     </message>
     <message>
-        <source>Sites and IP addresses of this country go direct. For &quot;ru&quot;: Russian services, .ru/.su/.рф domains and Russian IP ranges.</source>
-        <translation>Сайты и IP-адреса этой страны идут напрямую. Для «ru»: российские сервисы, домены .ru/.su/.рф и российские IP-диапазоны.</translation>
+        <source>Sites and IP addresses of this country go direct. For &quot;cn&quot;: Chinese services (geosite:cn) and Chinese IP ranges; for &quot;ru&quot;: Russian services, .ru/.su/.рф domains and Russian IP ranges.</source>
+        <translation>Сайты и IP-адреса этой страны идут напрямую. Для «cn»: китайские сервисы (geosite:cn) и китайские IP-диапазоны; для «ru»: российские сервисы, домены .ru/.su/.рф и российские IP-диапазоны.</translation>
     </message>
     <message>
         <source>Everything else</source>

@@ -1,0 +1,5 @@
+{
+  "Every %n hour(s)": ["Every %n hour", "Every %n hours"],
+  "%n server(s)": ["%n server", "%n servers"],
+  "Deleting %n rule(s)": ["Deleting %n rule", "Deleting %n rules"]
+}

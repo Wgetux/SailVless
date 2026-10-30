@@ -161,7 +161,7 @@
   "Only my rules": "Только мои правила",
   "Panels that send full Xray JSON (e.g. with the Happ User-Agent) include their own routing. Off: keep the panel's routing.": "Панели, которые отдают полный Xray JSON (например, с User-Agent Happ), присылают свою маршрутизацию. Выключено — используется маршрутизация панели.",
   "proxy": "через прокси",
-  "Sites and IP addresses of this country go direct. For \"ru\": Russian services, .ru/.su/.рф domains and Russian IP ranges.": "Сайты и IP-адреса этой страны идут напрямую. Для «ru»: российские сервисы, домены .ru/.su/.рф и российские IP-диапазоны.",
+  "Sites and IP addresses of this country go direct. For \"cn\": Chinese services (geosite:cn) and Chinese IP ranges; for \"ru\": Russian services, .ru/.su/.рф domains and Russian IP ranges.": "Сайты и IP-адреса этой страны идут напрямую. Для «cn»: китайские сервисы (geosite:cn) и китайские IP-диапазоны; для «ru»: российские сервисы, домены .ru/.su/.рф и российские IP-диапазоны.",
   "through the proxy": "через прокси",
   "Action": "Действие",
   "domain contains": "домен содержит",
