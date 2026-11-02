@@ -692,8 +692,8 @@
         <translation>忽略虚拟以太网（实验性）</translation>
     </message>
     <message>
-        <source>Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.</source>
-        <translation>容器会创建虚拟网线，系统可能优先使用它而不是 Wi-Fi 和移动数据，导致手机断网。真实的以太网适配器不受影响，也不会修改系统文件。</translation>
+        <source>Fixes lost internet on the phone or in Waydroid and other containers: they create a virtual cable that the system may prefer over Wi-Fi and mobile data. Real Ethernet adapters are not affected and no system files are changed.</source>
+        <translation>用于解决手机或 Waydroid 等容器断网的问题：它们会创建虚拟网线，系统可能优先使用它而不是 Wi-Fi 和移动数据。真实的以太网适配器不受影响，也不会修改系统文件。</translation>
     </message>
     <message>
         <source>Check that the server responds</source>

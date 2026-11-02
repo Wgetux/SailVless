@@ -698,8 +698,8 @@
         <translation>Игнорировать виртуальный Ethernet (эксперимент)</translation>
     </message>
     <message>
-        <source>Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.</source>
-        <translation>Контейнеры создают виртуальный кабель, который система может предпочесть Wi-Fi и мобильному интернету, и телефон останется без сети. Настоящие Ethernet-адаптеры это не затрагивает, системные файлы не меняются.</translation>
+        <source>Fixes lost internet on the phone or in Waydroid and other containers: they create a virtual cable that the system may prefer over Wi-Fi and mobile data. Real Ethernet adapters are not affected and no system files are changed.</source>
+        <translation>Поможет, если пропадает интернет на телефоне или в Waydroid и других контейнерах: они создают виртуальный кабель, который система может предпочесть Wi-Fi и мобильному интернету. Настоящие Ethernet-адаптеры это не затрагивает, системные файлы не меняются.</translation>
     </message>
     <message>
         <source>Check that the server responds</source>

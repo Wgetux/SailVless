@@ -15,7 +15,7 @@ import (
 	"sailvless/internal/store"
 )
 
-var version = "1.3.1"
+var version = "1.3.2"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ctl" {

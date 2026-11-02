@@ -90,7 +90,7 @@ Page {
             }
             TextSwitch {
                 text: qsTr("Ignore virtual Ethernet (experimental)")
-                description: qsTr("Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.")
+                description: qsTr("Fixes lost internet on the phone or in Waydroid and other containers: they create a virtual cable that the system may prefer over Wi-Fi and mobile data. Real Ethernet adapters are not affected and no system files are changed.")
                 checked: !!page.settings.ignoreVeth
                 automaticCheck: false
                 onClicked: page.patch({ ignoreVeth: !checked })
