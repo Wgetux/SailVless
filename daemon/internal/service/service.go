@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,6 +30,7 @@ import (
 )
 
 type Service struct {
+	vethKick   chan struct{} // the virtual Ethernet setting changed
 	Store      *store.Store
 	Logs       *core.LogBuf
 	Runner     *core.Runner
@@ -90,7 +92,7 @@ type Probe struct {
 
 func New(st *store.Store, coreDir, runtimeDir string) *Service {
 	logs := core.NewLogBuf(1000)
-	s := &Service{Store: st, Logs: logs, Runner: core.NewRunner(logs), Sidecar: core.NewRunner(logs), CoreDir: coreDir, RuntimeDir: runtimeDir}
+	s := &Service{Store: st, Logs: logs, Runner: core.NewRunner(logs), Sidecar: core.NewRunner(logs), CoreDir: coreDir, RuntimeDir: runtimeDir, vethKick: make(chan struct{}, 1)}
 	s.Runner.OnChange = func(core.State, string) {
 		if s.OnState != nil {
 			s.OnState(s.Status())
@@ -443,8 +445,19 @@ func (s *Service) SetSettings(v store.Settings) error {
 	if err := validate(v); err != nil {
 		return err
 	}
+	old := s.Store.Settings()
 	if err := s.Store.SetSettings(v); err != nil {
 		return err
+	}
+	if old.IgnoreVeth != v.IgnoreVeth {
+		select {
+		case s.vethKick <- struct{}{}:
+		default:
+		}
+		old.IgnoreVeth = v.IgnoreVeth
+		if reflect.DeepEqual(old, v) {
+			return nil // this one does not touch the connection
+		}
 	}
 	return s.reconnectIfActive()
 }

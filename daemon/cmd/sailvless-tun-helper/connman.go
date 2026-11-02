@@ -195,6 +195,28 @@ func (h *helper) connmanConnectOnce() error {
 
 // connmanCall calls a net.connman.Service method without waiting long:
 // connmand answers Connect only when the connection is done.
+// DetachService disconnects a container's veth from connman, which only lets
+// root do that. Nothing else may be disconnected through here.
+func (h *helper) DetachService(path string) *dbus.Error {
+	h.mu.Lock()
+	h.lastUsed = time.Now()
+	h.mu.Unlock()
+	svc := dbus.ObjectPath(path)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	var props map[string]dbus.Variant
+	if err := h.conn.Object("net.connman", svc).CallWithContext(ctx, "net.connman.Service.GetProperties", 0).Store(&props); err != nil {
+		return dbusErr(err)
+	}
+	eth, _ := props["Ethernet"].Value().(map[string]dbus.Variant)
+	iface, _ := eth["Interface"].Value().(string)
+	if typ, _ := props["Type"].Value().(string); typ != "ethernet" || !strings.HasPrefix(iface, "veth") {
+		return dbusErr(errors.New("not a virtual Ethernet service"))
+	}
+	h.logs.Add("helper: ", "disconnecting virtual Ethernet "+iface)
+	return dbusErr(h.connmanCall(svc, "Disconnect"))
+}
+
 func (h *helper) connmanCall(svc dbus.ObjectPath, method string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()

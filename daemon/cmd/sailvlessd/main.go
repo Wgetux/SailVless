@@ -15,7 +15,7 @@ import (
 	"sailvless/internal/store"
 )
 
-var version = "1.3.0"
+var version = "1.3.1"
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "ctl" {
@@ -84,6 +84,7 @@ func run() error {
 	go svc.WatchSystemVPN()
 	go svc.AutoUpdateLoop(ctx)
 	go svc.WatchNetwork(ctx)
+	go svc.VethGuardLoop(ctx)
 	go svc.HealthLoop(ctx)
 	go svc.LivenessLoop(ctx)
 

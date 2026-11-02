@@ -214,5 +214,7 @@
   "Edit": "编辑",
   "Pinned": "已置顶",
   "Pin to top": "置顶",
-  "Unpin": "取消置顶"
+  "Unpin": "取消置顶",
+  "Ignore virtual Ethernet (experimental)": "忽略虚拟以太网（实验性）",
+  "Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.": "容器会创建虚拟网线，系统可能优先使用它而不是 Wi-Fi 和移动数据，导致手机断网。真实的以太网适配器不受影响，也不会修改系统文件。"
 }

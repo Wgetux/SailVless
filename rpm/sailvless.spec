@@ -1,6 +1,6 @@
 Name:       sailvless
 Summary:    VLESS / VMess / Trojan / Shadowsocks / Hysteria2 / TUIC / AmneziaWG proxy client
-Version:    1.3.0
+Version:    1.3.1
 Release:    1
 # own code: GPL-3.0-or-later; bundled: Xray-core (MPL-2.0), sing-box (GPL-3.0-or-later),
 # amneziawg-go (MIT), gVisor and btree (Apache-2.0), godbus (BSD-2-Clause), golang.org/x (BSD-3-Clause)

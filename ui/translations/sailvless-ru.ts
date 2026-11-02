@@ -694,6 +694,14 @@
         <translation>Если перед перезагрузкой телефона подключение было включено, оно включится снова. Выключено: без подключения, пока вы не включите его сами.</translation>
     </message>
     <message>
+        <source>Ignore virtual Ethernet (experimental)</source>
+        <translation>Игнорировать виртуальный Ethernet (эксперимент)</translation>
+    </message>
+    <message>
+        <source>Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.</source>
+        <translation>Контейнеры создают виртуальный кабель, который система может предпочесть Wi-Fi и мобильному интернету, и телефон останется без сети. Настоящие Ethernet-адаптеры это не затрагивает, системные файлы не меняются.</translation>
+    </message>
+    <message>
         <source>Check that the server responds</source>
         <translation>Проверять, что сервер отвечает</translation>
     </message>

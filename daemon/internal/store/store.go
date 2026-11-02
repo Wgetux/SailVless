@@ -25,6 +25,7 @@ type Settings struct {
 	// bring that connection back when the phone starts too (a restarted
 	// daemon, e.g. after a package update, restores it anyway)
 	ConnectOnBoot bool   `json:"connectOnBoot"`
+	IgnoreVeth    bool   `json:"ignoreVeth"` // keep connman off container interfaces
 	Listen        string `json:"listen"`
 	SocksPort     int    `json:"socksPort"`
 	HTTPPort      int    `json:"httpPort"`
@@ -111,7 +112,7 @@ func Open(dir string) (*Store, error) {
 		profiles: map[string]*link.Profile{},
 		subs:     map[string]*Subscription{},
 		settings: Settings{Listen: "127.0.0.1", SocksPort: 10808, HTTPPort: 10809, AuthEnabled: true, LogLevel: "warning",
-			UserAgent: DefaultUserAgent, HWIDEnabled: true, ConnectOnBoot: true,
+			UserAgent: DefaultUserAgent, HWIDEnabled: true, ConnectOnBoot: true, IgnoreVeth: true,
 			BootstrapDNS: "1.1.1.1", HealthCheck: true, RemoteDNS: "1.1.1.1", Routing: routing.Default()},
 	}
 	var list []*link.Profile

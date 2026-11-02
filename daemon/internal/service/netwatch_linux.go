@@ -109,6 +109,13 @@ func (s *Service) restartAfterNetworkChange() {
 	}
 }
 
+// localOnly tells interfaces that never lead to the internet: connman treats a
+// container's veth as a cable and gives it a default route when nothing else
+// is up, which must not count as a network change.
+func localOnly(iface string) bool {
+	return strings.HasPrefix(iface, "veth") || strings.HasPrefix(iface, "waydroid")
+}
+
 // defaultRoute returns "iface gateway" of the IPv4 default route in the main
 // table ("" when offline). The tunnel uses its own table, so it does not show up.
 func defaultRoute() string {
@@ -121,7 +128,7 @@ func defaultRoute() string {
 	best, bestMetric := "", int(^uint(0)>>1)
 	for sc.Scan() {
 		fl := strings.Fields(sc.Text())
-		if len(fl) < 8 || fl[1] != "00000000" || fl[7] != "00000000" {
+		if len(fl) < 8 || fl[1] != "00000000" || fl[7] != "00000000" || localOnly(fl[0]) {
 			continue
 		}
 		var metric int

@@ -222,5 +222,7 @@
   "Edit": "Изменить",
   "Pinned": "Закреплённые",
   "Pin to top": "Закрепить",
-  "Unpin": "Открепить"
+  "Unpin": "Открепить",
+  "Ignore virtual Ethernet (experimental)": "Игнорировать виртуальный Ethernet (эксперимент)",
+  "Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.": "Контейнеры создают виртуальный кабель, который система может предпочесть Wi-Fi и мобильному интернету, и телефон останется без сети. Настоящие Ethernet-адаптеры это не затрагивает, системные файлы не меняются."
 }

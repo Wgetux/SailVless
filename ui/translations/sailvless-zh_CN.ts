@@ -688,6 +688,14 @@
         <translation>如果重启手机前处于连接状态，则重新连接。关闭：保持断开，直到你手动连接。</translation>
     </message>
     <message>
+        <source>Ignore virtual Ethernet (experimental)</source>
+        <translation>忽略虚拟以太网（实验性）</translation>
+    </message>
+    <message>
+        <source>Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.</source>
+        <translation>容器会创建虚拟网线，系统可能优先使用它而不是 Wi-Fi 和移动数据，导致手机断网。真实的以太网适配器不受影响，也不会修改系统文件。</translation>
+    </message>
+    <message>
         <source>Check that the server responds</source>
         <translation>检查服务器是否响应</translation>
     </message>

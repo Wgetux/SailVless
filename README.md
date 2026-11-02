@@ -108,6 +108,9 @@ the next start. Installing the package restarts `connman-vpn.service`, so a VPN 
   (the service installed with it takes port 53 from Waydroid's own dnsmasq after a reboot) and a `media.settings.xml`
   that exists in the container, in `/var/lib/waydroid/waydroid_base.prop` and `[properties]` of `waydroid.cfg`
   (e.g. `/vendor/etc/media_profiles_V1_0.xml`; Android keeps restarting at the boot logo otherwise).
+  connman also treats the container's veth as a cable and may send the default route there, so mobile data can stay
+  down after a network loss: the experimental setting "Ignore virtual Ethernet" (on by default) prevents that without
+  changing system files; real Ethernet adapters are not affected.
 
 ## Building
 

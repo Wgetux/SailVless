@@ -89,6 +89,13 @@ Page {
                 onClicked: page.patch({ connectOnBoot: !checked })
             }
             TextSwitch {
+                text: qsTr("Ignore virtual Ethernet (experimental)")
+                description: qsTr("Containers create a virtual cable that the system may prefer over Wi-Fi and mobile data, leaving the phone offline. Real Ethernet adapters are not affected and no system files are changed.")
+                checked: !!page.settings.ignoreVeth
+                automaticCheck: false
+                onClicked: page.patch({ ignoreVeth: !checked })
+            }
+            TextSwitch {
                 text: qsTr("Check that the server responds")
                 description: qsTr("Every 2 minutes while the screen is on, a tiny request goes through the server. If it fails twice, the connection is restarted; if that does not help, you get a notification.")
                 checked: !!page.settings.healthCheck

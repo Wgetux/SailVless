@@ -98,6 +98,8 @@ root 辅助服务只接受 `defaultuser` 的调用（D-Bus 策略），自行生
   Waydroid 本身可能需要两处修改：`systemctl disable --now dnsmasq.service`（随其安装的服务在重启后会占用 53 端口，
   使它自己的 dnsmasq 无法启动），以及在 `/var/lib/waydroid/waydroid_base.prop` 和 `waydroid.cfg` 的 `[properties]` 中
   设置容器内存在的 `media.settings.xml`（例如 `/vendor/etc/media_profiles_V1_0.xml`，否则 Android 会在启动画面反复重启）。
+  此外，connman 会把容器的 veth 当作有线网络，并可能把默认路由指向它，导致网络中断后移动数据无法恢复：实验性设置“忽略虚拟以太网”（默认开启）
+  可避免此问题，且不修改系统文件；真实的以太网适配器不受影响。
 
 ## 构建
 

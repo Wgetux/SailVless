@@ -87,6 +87,7 @@ func serve() error {
   <method name="Start"><arg direction="in" type="s" name="paramsJson"/></method>
   <method name="Stop"/>
   <method name="RestartCore"/>
+  <method name="DetachService"><arg direction="in" type="s" name="path"/></method>
   <method name="Status"><arg direction="out" type="s" name="statusJson"/></method>
   <method name="Logs"><arg direction="in" type="i" name="lines"/><arg direction="out" type="s" name="text"/></method>
   <method name="RequestConnect"/>
